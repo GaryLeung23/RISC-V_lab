@@ -104,8 +104,44 @@ void asm_test(void)
 		printk("macro_test_2 ok\n");
 }
 
+extern char _text_boot[], _etext_boot[];
+extern char _text[], _etext[];
+extern char _rodata[], _erodata[];
+extern char _data[], _edata[];
+extern char _bss[], _ebss[];
+
+static void print_mem(void)
+{
+	printk("BenOS image layout:\n");
+	printk("  .text.boot: 0x%08lx - 0x%08lx (%6ld B)\n",
+			(unsigned long)_text_boot, (unsigned long)_etext_boot,
+			(unsigned long)(_etext_boot - _text_boot));
+	printk("       .text: 0x%08lx - 0x%08lx (%6ld B)\n",
+			(unsigned long)_text, (unsigned long)_etext,
+			(unsigned long)(_etext - _text));
+	printk("     .rodata: 0x%08lx - 0x%08lx (%6ld B)\n",
+			(unsigned long)_rodata, (unsigned long)_erodata,
+			(unsigned long)(_erodata - _rodata));
+	printk("       .data: 0x%08lx - 0x%08lx (%6ld B)\n",
+			(unsigned long)_data, (unsigned long)_edata,
+			(unsigned long)(_edata - _data));
+	printk("        .bss: 0x%08lx - 0x%08lx (%6ld B)\n",
+			(unsigned long)_bss, (unsigned long)_ebss,
+			(unsigned long)(_ebss - _bss));
+}
+
+static void clean_bss(void)
+{
+	unsigned long start = (unsigned long)_bss;
+	unsigned long end = (unsigned long)_ebss;
+	unsigned size = end - start;
+
+	memset((void *)start, 0, size);
+}
+
 void kernel_main(void)
 {
+	clean_bss();
 	uart_init();
 	uart_send_string("Welcome RISC-V!\r\n");
 	init_printk_done();
@@ -117,6 +153,8 @@ void kernel_main(void)
 	print_func_name(0x800880);
 	print_func_name(0x800860);
 	print_func_name(0x800800);
+
+	print_mem();
 
 	while (1) {
 		;

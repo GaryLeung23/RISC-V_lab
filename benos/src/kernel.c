@@ -11,6 +11,8 @@ extern unsigned long compare_and_return(unsigned long a, unsigned long b);
 extern unsigned long sel_test(unsigned long a, unsigned long b);
 extern void my_memcpy_test(void);
 extern void branch_test(void);
+extern unsigned long macro_test_1(long a, long b);
+extern unsigned long macro_test_2(long a, long b);
 
 extern unsigned long func_addr[];
 extern unsigned long func_num_syms;
@@ -92,6 +94,14 @@ void asm_test(void)
        printk("branch test done\n");
        
        dump_stack();
+       
+       val1 = macro_test_1(5, 5);
+       if (val1 == 10)
+	       printk("macro_test_1 ok\n");
+       
+       val2 = macro_test_2(5, 5);
+	if (val2 == 0)
+		printk("macro_test_2 ok\n");
 }
 
 void kernel_main(void)

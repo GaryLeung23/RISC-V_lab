@@ -12,6 +12,50 @@ extern unsigned long sel_test(unsigned long a, unsigned long b);
 extern void my_memcpy_test(void);
 extern void branch_test(void);
 
+extern unsigned long func_addr[];
+extern unsigned long func_num_syms;
+extern char func_string;
+
+static int print_func_name(unsigned long addr)
+{
+	int i;
+	char *p, *string;
+
+	for (i = 0; i < func_num_syms; i++) {
+		if (addr == func_addr[i])
+			goto found;
+	}
+
+	return 0;
+
+found:
+    p = &func_string;
+    
+    if (i == 0) {
+	    string = p;
+	    goto done;
+    }
+
+    while (1) {
+    	p++;
+
+    	if (*p == '\0')
+    		i--;
+
+    	if (i == 0) {
+    		p++;
+    		string = p;
+    		break;
+    	}
+    }
+
+done:
+    uart_send_string(string);
+    uart_send_string("\n");
+
+    return 0;
+}
+
 void asm_test(void)
 {
 	unsigned long val1, val2;
@@ -58,6 +102,11 @@ void kernel_main(void)
 	printk("printk init done\n");
 
 	asm_test();
+
+	/* lab5-4：查表*/
+	print_func_name(0x800880);
+	print_func_name(0x800860);
+	print_func_name(0x800800);
 
 	while (1) {
 		;

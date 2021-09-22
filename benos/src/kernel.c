@@ -58,6 +58,34 @@ done:
     return 0;
 }
 
+/*
+ * 内嵌汇编实验1：实现简单的memcpy函数
+ *
+ * 实现一个小的memcpy汇编函数
+ * 从0x80200000地址拷贝32字节到0x80210000地址处，并使用gdb来比较数据是否拷贝正确
+ */
+static void my_memcpy_asm_test1(unsigned long src, unsigned long dst,
+		unsigned long size)
+{
+	unsigned long tmp = 0;
+	unsigned long end = src + size;
+
+	asm volatile (
+			"1: ld %1, (%2)\n"
+			"sd %1, (%0)\n"
+			"addi %0, %0, 8\n"
+			"addi %2, %2, 8\n"
+			"blt %2, %3, 1b"
+			: "+r" (dst), "+r" (tmp), "+r" (src)
+			: "r" (end)
+			: "memory");
+}
+
+void inline_asm_test(void)
+{
+	my_memcpy_asm_test1(0x80200000, 0x80210000, 32);
+}
+
 void asm_test(void)
 {
 	unsigned long val1, val2;
@@ -161,6 +189,7 @@ void kernel_main(void)
 	printk("printk init done\n");
 
 	asm_test();
+	inline_asm_test();
 
 	/* lab5-4：查表*/
 	print_func_name(0x800880);

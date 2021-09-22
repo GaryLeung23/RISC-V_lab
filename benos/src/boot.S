@@ -2,21 +2,6 @@
 
 .globl _start
 _start:
-       /*
-          假设代码段存储在ROM中(LMA)，而ROM的地址在0x80300000
-
-          我们需要把代码段 从加载地址(LMA)拷贝到 运行地址(VMA)
-        */
-       la t0, TEXT_ROM
-       la t1, _text
-       la t2, _etext
-.L0:
-	ld  a5, (t0)
-	sd a5, (t1)
-	addi t1, t1, 8
-	addi t0, t0, 8
-	bltu t1, t2, .L0
-
 	/* 关闭中断 */
 	csrw sie, zero
 	

@@ -86,7 +86,7 @@ benos_payload.bin: $(SBI_SRC_DIR)/sbi_linker_payload.ld $(SBI_OBJ_FILES) $(OBJ_F
 ##############
 ifeq ($(board), qemu)
 QEMU_FLAGS  += -nographic -machine virt -m 128M 
-QEMU_BIOS = -bios mysbi.bin  -device loader,file=benos.bin,addr=0x80200000 
+QEMU_BIOS = -bios mysbi.bin   
 run:
 	qemu-system-riscv64 $(QEMU_FLAGS) $(QEMU_BIOS) -kernel benos.elf
 debug:

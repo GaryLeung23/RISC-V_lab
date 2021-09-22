@@ -1,3 +1,6 @@
+/* 假设ROM地址为0x8030000 */
+TEXT_ROM = 0x80300000;
+
 SECTIONS
 {
 	/*
@@ -17,17 +20,27 @@ SECTIONS
 
 	/*
         * text代码段
+	* 假设代码段是在ROM中(LMA), 这时候运行地址VMA 不等于 加载地址LMA
         */
+	. = ALIGN(8);
 	_text = .;
-	.text : { *(.text) }
+	.text : AT(TEXT_ROM)
+       {
+               *(.text)
+       }
+	. = ALIGN(8);
 	_etext = .;
 
 	/*
         * 只读数据段
+        * ADDR是内建函数,返回的是VMA
         */
 	_rodata = .;
-	.rodata : { *(.rodata) }
-	_erodata = .;
+       .rodata : AT(ADDR(.rodata))
+       {
+               *(.rodata)
+       }
+       _erodata = .;
 
 	/*
         * 数据段

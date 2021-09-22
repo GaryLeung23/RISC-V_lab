@@ -149,6 +149,22 @@ static void test_sysregs(void)
 	printk("sstatus =0x%x\n", val);
 }
 
+static int test_asm_goto(int a)
+{
+	asm goto (
+			"addi %0, %0, -1\n"
+			"beqz %0, %l[label]\n"
+			:
+			: "r" (a)
+			: "memory"
+			: label);
+
+	return 0;
+
+label:
+	printk("%s: a = %d\n", __func__, a);
+	return 1;
+}
 
 void inline_asm_test(void)
 {
@@ -163,6 +179,15 @@ void inline_asm_test(void)
 
 	/* 内嵌汇编实验5: 实现读和写系统寄存器的宏*/
 	test_sysregs();
+
+	/* 内嵌汇编实验6: goto模板的内嵌汇编*/
+	int a = 1;
+	if (test_asm_goto(a) == 1)
+		printk("asm_goto: return 1\n");
+
+	int b = 0;
+	if (test_asm_goto(b) == 0)
+		printk("asm_goto: b is not 1\n");
 }
 
 void asm_test(void)

@@ -108,6 +108,9 @@ void inline_asm_test(void)
 {
 	my_memcpy_asm_test1(0x80200000, 0x80210000, 32);
 	my_memcpy_asm_test2(0x80200000, 0x80210000, 32);
+
+	/* 内嵌汇编实验3: memset函数实现*/
+	memset((void *)0x80210002, 0x55, 48);
 }
 
 void asm_test(void)

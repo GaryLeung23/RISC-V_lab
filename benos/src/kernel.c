@@ -104,6 +104,42 @@ static void my_memcpy_asm_test2(unsigned long src, unsigned long dst,
 			: "memory");
 }
 
+#define MY_OPS(ops, asm_ops) \
+static inline void my_asm_##ops(unsigned long mask, void *p) \
+{                                                     \
+	unsigned long tmp = 0;                            \
+	asm volatile (                                \
+			"ld %[tmp], (%[p])\n"              \
+			" "#asm_ops" %[tmp], %[tmp], %[mask]\n"    \
+			"sd %[tmp], (%[p])\n"               \
+			: [p] "+r"(p), [tmp]"+r" (tmp)          \
+			: [mask]"r" (mask)                   \
+			: "memory"	               \
+		     );                                \
+}
+
+MY_OPS(orr, or)
+MY_OPS(and, and)
+MY_OPS(add, add)
+
+static void my_ops_test(void)
+{
+	unsigned long p;
+
+	p = 0xf;
+	my_asm_and(0x2, &p);
+	printk("test and: p=0x%x\n", p);
+
+	p = 0x80;
+	my_asm_orr(0x3, &p);
+	printk("test orr: p=0x%x\n", p);
+
+	p = 0x3;
+	my_asm_add(0x2, &p);
+	printk("test add: p=0x%x\n", p);
+}
+
+
 void inline_asm_test(void)
 {
 	my_memcpy_asm_test1(0x80200000, 0x80210000, 32);
@@ -111,6 +147,9 @@ void inline_asm_test(void)
 
 	/* 内嵌汇编实验3: memset函数实现*/
 	memset((void *)0x80210002, 0x55, 48);
+
+	/* 内嵌汇编实验4: 使用内嵌汇编与宏的结合*/
+	my_ops_test();
 }
 
 void asm_test(void)

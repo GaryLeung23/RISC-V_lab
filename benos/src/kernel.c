@@ -2,6 +2,7 @@
 #include "type.h"
 #include "memset.h"
 #include "printk.h"
+#include "io.h"
 
 extern void load_store_test(void);
 extern void pc_related_test(void);
@@ -139,6 +140,15 @@ static void my_ops_test(void)
 	printk("test add: p=0x%x\n", p);
 }
 
+static void test_sysregs(void)
+{
+	unsigned long val;
+
+	val = read_csr(sstatus);
+
+	printk("sstatus =0x%x\n", val);
+}
+
 
 void inline_asm_test(void)
 {
@@ -150,6 +160,9 @@ void inline_asm_test(void)
 
 	/* 内嵌汇编实验4: 使用内嵌汇编与宏的结合*/
 	my_ops_test();
+
+	/* 内嵌汇编实验5: 实现读和写系统寄存器的宏*/
+	test_sysregs();
 }
 
 void asm_test(void)

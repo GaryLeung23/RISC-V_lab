@@ -2,6 +2,23 @@
 
 extern void *__memset_16bytes_asm(void *s, unsigned long val, unsigned long count); 
 
+static void __memset_16bytes_inline_asm(void *p, unsigned long val,
+		int count)
+{
+	int i = 0;
+
+	asm volatile (
+			"1: sd %[val], (%[p])\n"
+			"sd %[val], 8(%[p])\n"
+			"addi %[i], %[i], 16\n"
+			"addi %[p], %[p], 16\n"
+			"blt %[i], %[count], 1b"
+			: [p] "+r" (p), [count]"+r" (count), [i]"+r" (i)
+			: [val]"r" (val)
+			: "memory"
+		     );
+}
+
 static void *__memset_1bytes(void *s, int c, size_t count)
 {
 	char *xs = s;
@@ -45,7 +62,11 @@ static void *__memset(char *s, int c, size_t count)
 		n = left / align;
 		left = left % align;
 
+#if 0
 		__memset_16bytes_asm(p, data, 16*n);
+#else
+		__memset_16bytes_inline_asm(p, data, 16*n);
+#endif
 
 		if (left)
 			__memset_1bytes(p + 16*n, c, left);

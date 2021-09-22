@@ -1,9 +1,9 @@
 SECTIONS
 {
 	/*
-        * 设置benos链接地址0xffff000000000000
+        * 设置benos的加载入口地址为0x80200000
         */
-	. = 0xffff000000000000,
+	. = 0x80200000,
 
 	/*
         * 这里是第一个段text.boot
@@ -15,7 +15,6 @@ SECTIONS
 
 	/*
         * text代码段
-	* 假设代码段是在ROM中(LMA), 这时候运行地址VMA 不等于 加载地址LMA
         */
 	. = ALIGN(8);
 	_text = .;

@@ -81,9 +81,33 @@ static void my_memcpy_asm_test1(unsigned long src, unsigned long dst,
 			: "memory");
 }
 
+/*
+ * lab7-2：实现简单的memcpy函数
+ *
+ * 在lab7-1的基础上尝试使用汇编符号名的方式来编写内嵌汇编
+ *
+ */
+static void my_memcpy_asm_test2(unsigned long src, unsigned long dst,
+		unsigned long size)
+{
+	unsigned long tmp = 0;
+	unsigned long end = src + size;
+
+	asm volatile (
+			"1: ld %[tmp], (%[src])\n"
+			"sd %[tmp], (%[dst])\n"
+			"addi %[dst], %[dst], 8\n"
+			"addi %[src], %[src], 8\n"
+			"blt %[src], %[end], 1b"
+			: [dst] "+r" (dst), [tmp] "+r" (tmp), [src] "+r" (src)
+			: [end] "r" (end)
+			: "memory");
+}
+
 void inline_asm_test(void)
 {
 	my_memcpy_asm_test1(0x80200000, 0x80210000, 32);
+	my_memcpy_asm_test2(0x80200000, 0x80210000, 32);
 }
 
 void asm_test(void)

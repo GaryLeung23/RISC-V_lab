@@ -2,7 +2,6 @@
 #include "sbi_lib.h"
 //#include "asm/sbi.h"
 #include "uart.h"
-#include "sbi_trap_regs.h"
 #include "sbi_trap.h"
 #include "printk.h"
 

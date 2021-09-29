@@ -17,4 +17,6 @@ enum {
 	true	= 1
 };
 
+#define cacheline_aligned __attribute__((__aligned__(64)))
+
 #endif /*BENOS_TYPE_H*/

@@ -22,6 +22,11 @@
 #define SR_FS  0x6000UL /* Floating-point Status */
 #define SR_XS  0x00018000UL /* Extension Status */
 
+/* 中断使能 */
+#define SIE_SSIE 0x2UL /* IPI软中断使能 */
+#define SIE_STIE 0x20UL /* 时钟中断使能 */
+#define SIE_SEIE 0x200UL /* IRQ外部中断使能 */
+
 #define SCAUSE_INT (1UL << 63)
 #define is_interrupt_fault(reg) (reg & SCAUSE_INT)
 

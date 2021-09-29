@@ -117,7 +117,6 @@ do_exception_vector:
 	tail do_exception
 
 ret_from_exception:
-
 restore_all:
 	kernel_exit
 	sret

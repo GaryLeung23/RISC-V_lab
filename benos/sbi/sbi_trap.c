@@ -1,10 +1,10 @@
 #include "asm/sbi.h"
 #include "asm/csr.h"
 #include "uart.h"
-#include "sbi_trap_regs.h"
 #include "sbi_trap.h"
 #include "sbi_error.h"
 #include "printk.h"
+#include "sbi_timer.h"
 
 void sbi_panic()
 {
@@ -52,6 +52,10 @@ static int sbi_ecall_handle(unsigned int id, struct sbi_trap_regs *regs)
 	int ret = 0;
 
 	switch (id) {
+	case SBI_SET_TIMER:
+		clint_timer_event_start(regs->a0);
+		ret = 0;
+		break;
 	case SBI_CONSOLE_PUTCHAR:
 		putchar(regs->a0);
 		ret = 0;
@@ -76,6 +80,21 @@ void sbi_trap_handler(struct sbi_trap_regs *regs)
 	int rc = SBI_ENOTSUPP;
 	const char *msg = "trap handler failed";
 
+	/* interrupt*/
+	if (mcause & MCAUSE_IRQ) {
+		mcause &=~ MCAUSE_IRQ;
+		switch (mcause) {
+		case IRQ_M_TIMER:
+			sbi_timer_process();
+			break;
+		default:
+			msg = "unhandled external interrupt";
+			goto trap_error;
+		}
+		return;
+	}
+
+	/*exception*/
 	switch (mcause) {
 	case CAUSE_SUPERVISOR_ECALL:
 		rc = sbi_ecall_handle(ecall_id, regs);
@@ -89,6 +108,7 @@ void sbi_trap_handler(struct sbi_trap_regs *regs)
 		break;
 	}
 
+trap_error:
 	if (rc) {
 		sbi_trap_error(regs, msg, rc);
 	}

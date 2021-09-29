@@ -2,6 +2,8 @@
 #include "asm/ptregs.h"
 #include "printk.h"
 #include "io.h"
+#include "type.h"
+#include "asm/timer.h"
 
 extern void do_exception_vector(void);
 
@@ -97,14 +99,31 @@ static inline const struct fault_info *ec_to_fault_info(unsigned int scause)
 	return fault_info + (scause & SCAUSE_EC);
 }
 
+#define INTERRUPT_CAUSE_SOFTWARE    1
+#define INTERRUPT_CAUSE_TIMER       5
+#define INTERRUPT_CAUSE_EXTERNAL    9
+
 void do_exception(struct pt_regs *regs, unsigned long scause)
 {
 	const struct fault_info *inf;
 
-	printk("%s, scause:0x%lx\n", __func__, scause);
+	//printk("%s, scause:0x%lx, sstatus=0x%lx\n", __func__, scause, regs->sstatus);
 
 	if (is_interrupt_fault(scause)) {
-
+		switch (scause &~ SCAUSE_INT) {
+		case INTERRUPT_CAUSE_TIMER:
+			handle_timer_irq();
+			break;
+		case INTERRUPT_CAUSE_EXTERNAL:
+		/* handle IRQ */
+			break;
+		case INTERRUPT_CAUSE_SOFTWARE:
+		/* handle IPI */
+			break;
+		default:
+			printk("unexpected interrupt cause");
+			panic();
+		}
 	} else {
 		inf = ec_to_fault_info(scause);
 		

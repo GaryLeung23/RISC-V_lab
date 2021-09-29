@@ -5,6 +5,8 @@
 #include "io.h"
 #include "asm/sbi.h"
 #include "asm/csr.h"
+#include "asm/timer.h"
+#include "asm/irq.h"
 
 extern void trap_init(void);
 extern void trigger_load_access_fault();
@@ -336,7 +338,11 @@ void kernel_main(void)
 	print_mem();
 	data();
 
-	test_fault();
+	timer_init();
+	printk("sstatus:0x%lx\n", read_csr(sstatus));
+	arch_local_irq_enable();
+	printk("sstatus:0x%lx\n", read_csr(sstatus));
+	//test_fault();
 
 	while (1) {
 		char c = sbi_getchar();

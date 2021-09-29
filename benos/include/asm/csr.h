@@ -20,6 +20,11 @@
 #define SR_FS  0x6000UL /* Floating-point Status */
 #define SR_XS  0x00018000UL /* Extension Status */
 
+/* 中断使能 */
+#define SIE_SSIE 0x2UL /* IPI软中断使能 */
+#define SIE_STIE 0x20UL /* 时钟中断使能 */
+#define SIE_SEIE 0x200UL /* IRQ外部中断使能 */
+
 #define SCAUSE_INT (1UL << 63)
 #define is_interrupt_fault(reg) (reg & SCAUSE_INT)
 
@@ -45,6 +50,22 @@
 ({								\
 	unsigned long __v = (unsigned long)(val);		\
 	__asm__ __volatile__ ("csrw " #csr ", %0"		\
+			      : : "rK" (__v)			\
+			      : "memory");			\
+})
+
+#define csr_set(csr, val)					\
+({								\
+	unsigned long __v = (unsigned long)(val);		\
+	__asm__ __volatile__ ("csrs " #csr ", %0"		\
+			      : : "rK" (__v)			\
+			      : "memory");			\
+})
+
+#define csr_clear(csr, val)					\
+({								\
+	unsigned long __v = (unsigned long)(val);		\
+	__asm__ __volatile__ ("csrc " #csr ", %0"		\
 			      : : "rK" (__v)			\
 			      : "memory");			\
 })

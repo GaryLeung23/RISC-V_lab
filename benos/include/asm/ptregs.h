@@ -1,4 +1,5 @@
-
+#ifndef __PTREGS_H__
+#define __PTREGS_H__
 /*
  * pt_regs栈框，用来保存中断现场或者异常现场
  *
@@ -51,3 +52,5 @@ struct pt_regs {
 	/* a0 value before the syscall */
 	unsigned long orig_a0;
 };
+
+#endif /*__PTREGS_H__*/

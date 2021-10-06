@@ -4,6 +4,7 @@
 #include "io.h"
 #include "type.h"
 #include "asm/timer.h"
+#include "asm/plic.h"
 
 extern void do_exception_vector(void);
 
@@ -115,7 +116,7 @@ void do_exception(struct pt_regs *regs, unsigned long scause)
 			handle_timer_irq();
 			break;
 		case INTERRUPT_CAUSE_EXTERNAL:
-		/* handle IRQ */
+			plic_handle_irq(regs);
 			break;
 		case INTERRUPT_CAUSE_SOFTWARE:
 		/* handle IPI */

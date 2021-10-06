@@ -1,5 +1,8 @@
 #include "asm/uart.h"
 #include "io.h"
+#include "asm/plic.h"
+#include "asm/sbi.h"
+#include "printk.h"
 
 char uart_get(void)
 {
@@ -52,4 +55,8 @@ void uart_init(void)
 
 	/* 使能FIFO，清空FIFO，设置14字节threshold*/
 	writeb(0xc7, UART_FCR);
+
+	/* 使能接收缓冲区满中断*/
+	writeb(0x1, UART_IER);
 }
+

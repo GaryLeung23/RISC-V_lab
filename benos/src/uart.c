@@ -1,5 +1,8 @@
 #include "asm/uart.h"
 #include "io.h"
+#include "asm/plic.h"
+#include "asm/sbi.h"
+#include "printk.h"
 
 void uart_send(char c)
 {
@@ -7,6 +10,14 @@ void uart_send(char c)
 		;
 
 	writeb(c, UART_DAT);
+}
+
+char uart_get(void)
+{
+	if (readb(UART_LSR) & UART_LSR_DR)
+		return readb(UART_DAT);
+	else
+		return -1;
 }
 
 void uart_send_string(char *str)
@@ -44,4 +55,29 @@ void uart_init(void)
 
 	/* 使能FIFO，清空FIFO，设置14字节threshold*/
 	writeb(0xc7, UART_FCR);
+
+	/* 使能接收缓冲区满中断*/
+	writeb(0x1, UART_IER);
+}
+
+void handle_uart_irq(void)
+{
+	char c;
+
+	c = uart_get();
+	if (c < 0)
+		return;
+	else if (c == '\r') {
+		printk("%s occurred\n", __func__);
+	}
+}
+
+void enable_uart_plic()
+{
+	/* TODO: using CPU0 now*/
+	int cpu = 0;
+
+	uart_init();
+
+	plic_enable_irq(cpu, UART0_IRQ, 1);
 }

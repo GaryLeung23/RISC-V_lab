@@ -7,6 +7,7 @@
 #include "asm/csr.h"
 #include "asm/timer.h"
 #include "asm/irq.h"
+#include "asm/plic.h"
 
 extern void trap_init(void);
 extern void trigger_load_access_fault();
@@ -326,6 +327,11 @@ void kernel_main(void)
 	printk("printk init done\n");
 
 	trap_init();
+#ifdef CONFIG_BOARD_QEMU
+	plic_init();
+	enable_uart_plic();
+#endif
+	arch_local_irq_enable();
 
 	asm_test();
 	inline_asm_test();
@@ -338,15 +344,16 @@ void kernel_main(void)
 	print_mem();
 	data();
 
-	timer_init();
+	//timer_init();
 	printk("sstatus:0x%lx\n", read_csr(sstatus));
 	arch_local_irq_enable();
-	printk("sstatus:0x%lx\n", read_csr(sstatus));
+	printk("sstatus:0x%lx, sie:0x%x\n", read_csr(sstatus), read_csr(sie));
 	//test_fault();
 
 	while (1) {
-		char c = sbi_getchar();
-		if (c == '\r')
-			printk("enter has pressed\n");
+		//char c = sbi_getchar();
+		//if (c == '\r')
+		//	printk("enter has pressed\n");
+		;
 	}
 }

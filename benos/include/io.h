@@ -16,8 +16,8 @@
 #define __iormb()	dmb()
 #define __iowmb()	dmb()
 
-#define readl(c)	({ unsigned int  __v = __arch_getl(c); __iormb(); __v; })
-#define writel(v,c)	({ unsigned int  __v = v; __iowmb(); __arch_putl(__v,c);})
+#define readl(c)	({ unsigned int  __v = __arch_getl((unsigned long)c); __iormb(); __v; })
+#define writel(v,c)	({ unsigned int  __v = v; __iowmb(); __arch_putl(__v, (unsigned long)c);})
 
 #define readb(c)	({ unsigned char  __v = __arch_getb(c); __iormb(); __v; })
 #define writeb(v,c)	({ unsigned char  __v = v; __iowmb(); __arch_putb(__v,c);})
@@ -27,12 +27,22 @@
 #else
 static inline void writel(unsigned int value, unsigned int addr)
 {
-	*(volatile unsigned int *)addr = value;
+	*(volatile unsigned int *)(unsigned long)addr = value;
 }
 
 static inline unsigned int readl(unsigned int addr)
 {
-	return *(volatile unsigned int *)addr;
+	return *(volatile unsigned int *)(unsigned long)addr;
+}
+
+static inline void writeb(char value, char addr)
+{
+	*(volatile unsigned char *)addr = value;
+}
+
+static inline unsigned char readb(char addr)
+{
+	return *(volatile unsigned char *)addr;
 }
 #endif
 

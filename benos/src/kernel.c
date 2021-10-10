@@ -8,6 +8,7 @@
 #include "asm/timer.h"
 #include "asm/irq.h"
 #include "asm/plic.h"
+#include "asm/memory.h"
 
 extern void trap_init(void);
 extern void trigger_load_access_fault();
@@ -244,6 +245,40 @@ void asm_test(void)
 		printk("macro_test_2 ok\n");
 }
 
+static int test_access_map_address(void)
+{
+	unsigned long address = DDR_END - 4096;
+
+	*(unsigned long *)address = 0x55;
+
+	if (*(unsigned long *)address == 0x55)
+		printk("%s access 0x%x done\n", __func__, address);
+
+	return 0;
+}
+
+/*
+ * 访问一个没有建立映射的地址
+ *
+ * Store/AMO page fault
+ */
+static int test_access_unmap_address(void)
+{
+	unsigned long address = DDR_END + 4096;
+
+	*(unsigned long *)address = 0x55;
+
+	printk("%s access 0x%x done\n", __func__, address);
+
+	return 0;
+}
+
+static void test_mmu(void)
+{
+	test_access_map_address();
+	test_access_unmap_address();
+}
+
 extern char _text_boot[], _etext_boot[];
 extern char _text[], _etext[];
 extern char _rodata[], _erodata[];
@@ -326,13 +361,6 @@ void kernel_main(void)
 
 	printk("printk init done\n");
 
-	trap_init();
-#ifdef CONFIG_BOARD_QEMU
-	plic_init();
-	enable_uart_plic();
-#endif
-	arch_local_irq_enable();
-
 	asm_test();
 	inline_asm_test();
 
@@ -340,6 +368,17 @@ void kernel_main(void)
 	print_func_name(0x800880);
 	print_func_name(0x800860);
 	print_func_name(0x800800);
+
+	trap_init();
+
+	mem_init((unsigned long)_ebss, DDR_END);
+	paging_init();
+
+#ifdef CONFIG_BOARD_QEMU
+	plic_init();
+	enable_uart_plic();
+#endif
+	arch_local_irq_enable();
 
 	print_mem();
 	data();
@@ -349,6 +388,8 @@ void kernel_main(void)
 	arch_local_irq_enable();
 	printk("sstatus:0x%lx, sie:0x%x\n", read_csr(sstatus), read_csr(sie));
 	//test_fault();
+	
+	test_mmu();
 
 	while (1) {
 		//char c = sbi_getchar();

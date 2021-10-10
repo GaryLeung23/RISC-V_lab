@@ -28,7 +28,7 @@ void plic_enable_irq(int cpu, int hwirq, int enable)
 	int hart = CPU_TO_HART_S(cpu);
 	unsigned int reg = PLIC_MENABLE(hart) + 4*(hwirq / 32);
 
-	printk("reg: 0x%x, hwirq:%d\n", reg, hwirq);
+	printk("reg: 0x%x, hwirq:%d, enable:%d\n", reg, hwirq,enable);
 
 	if (enable)
 		writel(readl(reg) | hwirq_mask, reg);

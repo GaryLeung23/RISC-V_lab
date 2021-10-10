@@ -32,6 +32,8 @@
 
 #define SCAUSE_EC (0xf) /* 目前支持15个异常*/
 
+#define SATP_MODE_39 (1UL << 63)
+
 /* Machine Memory Protection
  * 暂时支持8个pmpcfg
 */

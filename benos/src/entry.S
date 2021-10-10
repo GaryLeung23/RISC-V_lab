@@ -1,5 +1,6 @@
 #include "asm/asm-offsets.h"
 #include "asm/csr.h"
+#include "mm.h"
 
 .macro kernel_entry
 	addi sp, sp, -(PT_SIZE)
@@ -125,4 +126,14 @@ restore_all:
 trigger_load_access_fault:
 	li a0, 0x0
 	ld a0, (a0)
+	ret
+
+.global enable_mmu_relocate
+enable_mmu_relocate:
+	la a2, idmap_pg_dir
+	srl a2, a2, PAGE_SHIFT
+	li a1, SATP_MODE_39
+	or a2, a2, a1
+	sfence.vma
+	csrw satp, a2
 	ret

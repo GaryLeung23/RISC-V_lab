@@ -23,7 +23,7 @@ SECTIONS
        {
                *(.text)
        }
-	. = ALIGN(8);
+	. = ALIGN(4096);
 	_etext = .;
 
 	/*
@@ -42,6 +42,9 @@ SECTIONS
         */
 	_data = .;
 	.data : { *(.data) }
+	. = ALIGN(4096);
+       idmap_pg_dir = .;
+       . += 4096;
 	_edata = .;
 
 	/*

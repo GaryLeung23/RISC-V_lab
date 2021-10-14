@@ -171,4 +171,17 @@ static inline pte_t pfn_pte(unsigned long pfn, pgprot_t prot)
 	return __pte((pfn << _PAGE_PFN_SHIFT) | pgprot_val(prot));
 }
 
+static inline int pmd_present(pmd_t pmd)
+{
+       return (pmd_val(pmd) & _PAGE_PRESENT );
+}
+
+static inline int pmd_leaf(pmd_t pmd)
+{
+       return pmd_present(pmd) && (pmd_val(pmd) & _PAGE_LEAF);
+}
+
+void dump_pgtable(void);
+void walk_pgd(pgd_t *pgd, unsigned long start, unsigned long size);
+
 #endif

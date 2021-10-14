@@ -9,6 +9,7 @@
 #include "asm/irq.h"
 #include "asm/plic.h"
 #include "asm/memory.h"
+#include "asm/pgtable.h"
 
 extern void trap_init(void);
 extern void trigger_load_access_fault();
@@ -388,6 +389,8 @@ void kernel_main(void)
 	arch_local_irq_enable();
 	printk("sstatus:0x%lx, sie:0x%x\n", read_csr(sstatus), read_csr(sie));
 	//test_fault();
+	
+	dump_pgtable();
 	
 	test_mmu();
 

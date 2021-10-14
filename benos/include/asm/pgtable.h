@@ -77,7 +77,7 @@
 
 #define pgd_none(pgd) (!pgd_val(pgd))
 #define pmd_none(pmd) (!pmd_val(pmd))
-#define pte_none(ptd) (!pte_val(ptd))
+#define pte_none(pte) (!pte_val(pte))
 
 /* 根据pgd的内容获得下一级页表基地址*/
 static inline unsigned long pgd_page_paddr(pgd_t pgd)
@@ -179,6 +179,51 @@ static inline int pmd_present(pmd_t pmd)
 static inline int pmd_leaf(pmd_t pmd)
 {
        return pmd_present(pmd) && (pmd_val(pmd) & _PAGE_LEAF);
+}
+
+static inline int pte_write(pte_t pte)
+{
+	return pte_val(pte) & _PAGE_WRITE;
+}
+
+static inline int pte_exec(pte_t pte)
+{
+	return pte_val(pte) & _PAGE_EXEC;
+}
+
+static inline int pte_dirty(pte_t pte)
+{
+	return pte_val(pte) & _PAGE_DIRTY;
+}
+
+static inline int pte_young(pte_t pte)
+{
+	return pte_val(pte) & _PAGE_ACCESSED;
+}
+
+static inline pte_t pte_wrprotect(pte_t pte)
+{
+	return __pte(pte_val(pte) & ~(_PAGE_WRITE));
+}
+
+static inline pte_t pte_mkwrite(pte_t pte)
+{
+	return __pte(pte_val(pte) | _PAGE_WRITE);
+}
+
+static inline pte_t pte_mkdirty(pte_t pte)
+{
+	return __pte(pte_val(pte) | _PAGE_DIRTY);
+}
+
+static inline pte_t pte_mkclean(pte_t pte)
+{
+	return __pte(pte_val(pte) & ~(_PAGE_DIRTY));
+}
+
+static inline pte_t pte_mkyoung(pte_t pte)
+{
+	return __pte(pte_val(pte) | _PAGE_ACCESSED);
 }
 
 void dump_pgtable(void);

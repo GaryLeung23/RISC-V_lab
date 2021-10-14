@@ -280,6 +280,62 @@ static void test_mmu(void)
 	test_access_unmap_address();
 }
 
+extern char idmap_pg_dir[];
+
+/* 根据虚拟地址address 得到其对应的ptep */
+static pte_t *walk_pgtable(unsigned long address)
+{
+	pgd_t *pgdp;
+	pmd_t *pmdp;
+	pte_t *ptep;
+
+	/* pgd */
+	pgdp = pgd_offset_raw((pgd_t *)idmap_pg_dir, address);
+	if (pgdp == NULL || pgd_none(*pgdp))
+		return NULL;
+
+	pmdp = get_pmdp_from_pgdp(pgdp, address);
+	if (pmdp == NULL || pmd_none(*pmdp))
+		return NULL;
+
+	ptep = get_ptep_from_pmdp(pmdp, address);
+	if ((ptep == NULL) || pte_none(*ptep))
+		return NULL;
+
+	return ptep;
+}
+
+extern char readonly_page[];
+
+static void test_walk_pgtable(void)
+{
+	pte_t pte, *ptep;
+	pte_t pte_new;
+
+	unsigned long addr = (unsigned long)readonly_page;
+
+	ptep = walk_pgtable(addr);
+
+	pte = *ptep;
+
+	printk("%s:\n", __func__);
+	printk("page addr:0x%lx, pte value: 0x%lx\n", addr, pte);
+	/*dump addr's pte*/
+	walk_pgd((pgd_t *)idmap_pg_dir, addr, PAGE_SIZE);
+
+	pte_new = pte_mkyoung(pte);
+	pte_new = pte_mkwrite(pte_new);
+
+	set_pte(ptep, pte_new);
+
+	printk("after mkwrite:\n");
+	/*dump addr's pte*/
+	walk_pgd((pgd_t *)idmap_pg_dir, addr, PAGE_SIZE);
+
+	memset(readonly_page, 0x55, 100);
+	printk("write readonly page done\n");
+}
+
 extern char _text_boot[], _etext_boot[];
 extern char _text[], _etext[];
 extern char _rodata[], _erodata[];
@@ -391,7 +447,8 @@ void kernel_main(void)
 	//test_fault();
 	
 	dump_pgtable();
-	
+
+	test_walk_pgtable();
 	test_mmu();
 
 	while (1) {

@@ -343,6 +343,7 @@ extern char _data[], _edata[];
 extern char _bss[], _ebss[];
 extern char _sdata[], _esdata[];
 extern char __global_pointer$[];
+extern char _end[];
 
 static void print_mem(void)
 {
@@ -410,6 +411,9 @@ static void test_fault(void)
 
 void kernel_main(void)
 {
+	mem_init((unsigned long)_end, DDR_END);
+	paging_init();
+
 	clean_bss();
 	uart_init();
 	//sbi ecall
@@ -428,8 +432,7 @@ void kernel_main(void)
 
 	trap_init();
 
-	mem_init((unsigned long)_ebss, DDR_END);
-	paging_init();
+
 
 #ifdef CONFIG_BOARD_QEMU
 	plic_init();

@@ -46,7 +46,8 @@ SECTIONS
 	.data : { *(.data) }
 	. = ALIGN(4096);
        idmap_pg_dir = .;
-       . += 4096;
+       . += 2 * 4096;
+       idmap_pg_end = .;
 	_edata = .;
 
 	/*
@@ -71,5 +72,6 @@ SECTIONS
 	_bss = .;
 	.bss : { *(.bss*) } 
 	_ebss = .;
+	_end = .;
 }
 

@@ -12,7 +12,7 @@ load_store_test:
 
 	lb t1, (t0)
 	lb t1, 4(t0)
-	lb t1, -4(t0)
+	//lb t1, -4(t0)
 	ld t1, (t0)
 
 	lb t1, 10(t0)

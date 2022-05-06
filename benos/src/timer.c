@@ -8,9 +8,9 @@
 
 unsigned long volatile cacheline_aligned jiffies;
 
-/*qemu virt的 SIFIVE_CLINT_TIMEBASE_FREQ = 10000000*/
-#define CLINT_TIMEBASE_FREQ 10000000
-#define HZ 1000
+
+
+
 
 #if 0
 static inline unsigned long get_cycles(void)
@@ -31,6 +31,7 @@ static inline unsigned long get_cycles(void)
 
 void reset_timer()
 {
+	//printk("get cycles %llu\n", get_cycles());
 	sbi_set_timer(get_cycles() + CLINT_TIMEBASE_FREQ/HZ);
 	csr_set(sie, SIE_STIE);
 }
@@ -46,5 +47,7 @@ void handle_timer_irq(void)
 	csr_clear(sie, SIE_STIE);
 	reset_timer();
 	jiffies++;
-	printk("Core0 Timer interrupt received, jiffies=%lu\r\n", jiffies);
+	//printk("Core0 Timer interrupt received, jiffies=%lu\r\n", jiffies);
+	tick_handle_periodic();
+	//csr_set(sie, SIE_STIE);
 }

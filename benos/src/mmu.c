@@ -199,6 +199,7 @@ static void create_mmio_mapping(void)
 			UART_SIZE, PAGE_KERNEL,
 			early_pgtable_alloc,
 			0);
+
 }
 
 void paging_init(void)

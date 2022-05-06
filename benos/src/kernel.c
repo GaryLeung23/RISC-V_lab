@@ -64,8 +64,7 @@ found:
     }
 
 done:
-    uart_send_string(string);
-    uart_send_string("\n");
+    printk("<0x%lx> %s\n", addr, string);
 
     return 0;
 }
@@ -247,6 +246,7 @@ void asm_test(void)
 		printk("macro_test_2 ok\n");
 }
 
+#if 0
 static int test_access_map_address(void)
 {
 	unsigned long address = DDR_END - 4096;
@@ -336,6 +336,7 @@ static void test_walk_pgtable(void)
 	memset(readonly_page, 0x55, 100);
 	printk("write readonly page done\n");
 }
+#endif
 
 extern char _text_boot[], _etext_boot[];
 extern char _text[], _etext[];
@@ -418,23 +419,34 @@ extern union task_union init_task_union;
 #define DELAY_TIME 80000
 #endif
 
-void kernel_thread(void)
+void kernel_thread1(void)
 {
-	long i = 0;
+	unsigned long i = 0;
 	while (1) {
 		delay(DELAY_TIME);
 		printk("%s: %ld\n", __func__, i++);
 	}
 }
 
+void kernel_thread2(void)
+{
+	unsigned long y = 0;
+	while (1) {
+		delay(DELAY_TIME);
+		printk("%s: %s + %llu\n", __func__, "abcde", y++);
+	}
+}
+
 void kernel_main(void)
 {
 	clean_bss();
+
 	mem_init((unsigned long)_end, DDR_END);
 	paging_init();
 	
 	uart_init();
 	//sbi ecall
+
 	sbi_put_string("Welcome RISC-V!\r\n");
 	init_printk_done(sbi_putchar);
 
@@ -445,6 +457,8 @@ void kernel_main(void)
 	print_func_name(0x800860);
 	print_func_name(0x800800);
 
+	/* 初始化就绪队列 */
+	sched_init();
 	trap_init();
 
 
@@ -453,36 +467,31 @@ void kernel_main(void)
 	plic_init();
 	enable_uart_plic();
 #endif
-	arch_local_irq_enable();
-
 	print_mem();
-	data();
+	//data();
 
-	//timer_init();
-	printk("sstatus:0x%lx\n", read_csr(sstatus));
-	arch_local_irq_enable();
-	printk("sstatus:0x%lx, sie:0x%x\n", read_csr(sstatus), read_csr(sie));
-	//test_fault();
+	timer_init();
 	
 	dump_pgtable();
 
-	test_walk_pgtable();
-	//test_mmu();
-	
 	int pid;
 
-	pid = do_fork(PF_KTHREAD, (unsigned long)&kernel_thread, 0);
+	pid = do_fork(PF_KTHREAD, (unsigned long)&kernel_thread1, 0);
 	if (pid < 0)
 		printk("create thread fail\n");
+	printk("pid %d created\n", pid);
 
-	struct task_struct *next = g_task[pid];
+	pid = do_fork(PF_KTHREAD, (unsigned long)&kernel_thread2, 0);
+	if (pid < 0)
+		printk("create thread fail\n");
+	
+	printk("pid %d created\n", pid);
 
-	switch_to(next);
+	printk("sstatus:0x%lx\n", read_csr(sstatus));
+	arch_local_irq_enable();
+	printk("sstatus:0x%lx, sie:0x%x\n", read_csr(sstatus), read_csr(sie));
 
 	while (1) {
-		//char c = sbi_getchar();
-		//if (c == '\r')
-		//	printk("enter has pressed\n");
 		;
 	}
 }

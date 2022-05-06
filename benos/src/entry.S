@@ -6,6 +6,8 @@
 .macro kernel_entry
 	addi sp, sp, -(PT_SIZE)
 
+	csrw sscratch, tp
+
 	sd x1,  PT_RA(sp)
 	sd x3,  PT_GP(sp)
 	sd x5,  PT_T0(sp)
@@ -108,9 +110,8 @@
 .align 2
 .global do_exception_vector
 do_exception_vector:
+	/*保存异常（中断）现场*/
 	kernel_entry
-
-	csrw sscratch, x0
 
 	la ra, ret_from_exception
 
@@ -119,7 +120,28 @@ do_exception_vector:
 	tail do_exception
 
 ret_from_exception:
+	ld s1, PT_SSTATUS(sp)
+	/* 清sstatus的SIE,也就是关中断总开关,一般时候是不需要的，但是在ret_from_kernel_thread中打开了中断,所以这里关闭中断 */
+	csrc sstatus, SR_SIE
+	/*判断是不是内核态触发的中断  这里目前只处理内核态触发的中断*/
+	andi s1, s1, SR_SPP
+	bnez s1, resume_kernel
+
+resume_kernel:
+	/* tp是进程内核栈的最低地址,即task_struct的地址 */
+	/*判断当前内核是否 处于 不可抢占状态，preempt_count > 0表示不可抢占状态*/
+	lw s1, TASK_TI_PREEMPT_COUNT(tp)
+	bnez s1, restore_all
+need_resched:
+	/*判断是否要抢占当前进程*/
+	lw s1, TASK_TI_NEED_RESCHED(tp)
+	andi s1, s1, _TIF_NEED_RESCHED
+	beqz s1, restore_all
+	/*准备抢占当前进程*/
+	call preempt_schedule_irq
+	j need_resched
 restore_all:
+	/*恢复中断现场*/
 	kernel_exit
 	sret
 
@@ -139,6 +161,17 @@ enable_mmu_relocate:
 	csrw satp, a2
 	ret
 
+/*
+进程切换： 保存prev进程的上下文，并且恢复next进程
+的上下文
+ struct task_struct * cpu_switch_to(struct task_struct *prev,
+	   struct task_struct *next);
+
+需要保存的上下文： ra,sp,s0 ~s11
+保存到进程的task_struct->cpu_context
+
+通过a0寄存器返回prev进程的task_struct
+ */
 .align 2
 .global cpu_switch_to
 cpu_switch_to:
@@ -178,12 +211,22 @@ cpu_switch_to:
 	ld s10, 96(a4)
 	ld s11, 104(a4)
 
+	/* tp point to task_struct*/
+	move tp, a1
+
 	ret
 
+/*
+ 进程fork之后第一次内核线程
+ */
 .align 2
 .global ret_from_kernel_thread
 ret_from_kernel_thread:
-	/* Call fn(arg) */
+	/* 第一次运行的进程来收拾prev进程的烂摊子, 比如打开中断等*/
+	call schedule_tail
+	/* 目前fn要是while(1)循环,否则会出错，所以这里的ra返回值只是个临时值，后续会改进 */
 	la ra, ret_from_exception
+	/* Call fn(arg) */
 	move a0, s2
+	/* jr 不带返回地址的跳转 */
 	jr s1

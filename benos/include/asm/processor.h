@@ -1,7 +1,12 @@
 #ifndef	_BENOS_PROCESSOR_H
 #define	_BENOS_PROCESSOR_H
 
+#define _TIF_NEED_RESCHED       (1)
+
+//task_struct成员的offset
 #define TASK_CPU_CONTEXT 0
+#define TASK_TI_PREEMPT_COUNT 112
+#define TASK_TI_NEED_RESCHED 116
 
 #ifndef __ASSEMBLY__
 

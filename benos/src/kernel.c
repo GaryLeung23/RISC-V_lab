@@ -442,7 +442,7 @@ void kernel_main(void)
 	clean_bss();
 
 	mem_init((unsigned long)_end, DDR_END);
-	paging_init();
+	// paging_init();
 	
 	uart_init();
 	//sbi ecall

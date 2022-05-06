@@ -1,6 +1,7 @@
 #include "asm/pgtable_hwdef.h"
 #include "mm.h"
 #include "asm/memory.h"
+#include "sched.h"
 
 .section ".text.boot"
 
@@ -12,10 +13,11 @@ _start:
 	call __init_uart
 	call print_asm
 
-	/* 设置栈, 栈的大小为4KB */
-	la sp, stacks_start
-	li t0, 4096
+	/* 设置栈: init_task_union + THREAD_SIZE*/
+	la sp, init_task_union
+	li t0, THREAD_SIZE
 	add sp, sp, t0
+	la tp, init_task_union
 
 .option push
 .option norelax
@@ -39,7 +41,8 @@ print_asm:
 	mv ra, s1
 	ret
 
-.global create_page_table
+/* _text_boot (SECTION DOWN)~ DDR_END(SECTION UP) */
+.global create_page_table 
 create_page_table:
 	addi sp, sp, -16
 	sd ra, 8(sp)
@@ -135,12 +138,6 @@ __create_section_mapping:
 	addi sp, sp, 16
 	///mv ra, s2
 	ret
-
-.section .data
-.align  12
-.global stacks_start
-stacks_start:
-	.skip 4096
 
 .section  .rodata
 .align 3

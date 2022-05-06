@@ -10,6 +10,7 @@
 #include "asm/plic.h"
 #include "asm/memory.h"
 #include "asm/pgtable.h"
+#include "sched.h"
 
 extern void trap_init(void);
 extern void trigger_load_access_fault();
@@ -409,21 +410,35 @@ static void test_fault(void)
 	trigger_access_fault();
 }
 
+extern union task_union init_task_union;
+
+#ifdef CONFIG_BOARD_QEMU
+#define DELAY_TIME 8000000
+#else
+#define DELAY_TIME 80000
+#endif
+
+void kernel_thread(void)
+{
+	long i = 0;
+	while (1) {
+		delay(DELAY_TIME);
+		printk("%s: %ld\n", __func__, i++);
+	}
+}
+
 void kernel_main(void)
 {
+	clean_bss();
 	mem_init((unsigned long)_end, DDR_END);
 	paging_init();
-
-	clean_bss();
+	
 	uart_init();
 	//sbi ecall
 	sbi_put_string("Welcome RISC-V!\r\n");
 	init_printk_done(sbi_putchar);
 
 	printk("printk init done\n");
-
-	asm_test();
-	inline_asm_test();
 
 	/* lab5-4：查表*/
 	print_func_name(0x800880);
@@ -451,10 +466,18 @@ void kernel_main(void)
 	
 	dump_pgtable();
 
-	trigger_load_access_fault();
-
 	test_walk_pgtable();
-	test_mmu();
+	//test_mmu();
+	
+	int pid;
+
+	pid = do_fork(PF_KTHREAD, (unsigned long)&kernel_thread, 0);
+	if (pid < 0)
+		printk("create thread fail\n");
+
+	struct task_struct *next = g_task[pid];
+
+	switch_to(next);
 
 	while (1) {
 		//char c = sbi_getchar();

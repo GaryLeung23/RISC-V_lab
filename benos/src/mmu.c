@@ -170,6 +170,7 @@ static void create_identical_mapping(void)
 	//printk("map memory done\n");
 }
 
+//create plic clint uart0 mapping
 static void create_mmio_mapping(void)
 {
 	unsigned long start;

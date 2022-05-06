@@ -43,7 +43,11 @@ SECTIONS
         * 数据段
         */
 	_data = .;
-	.data : { *(.data) }
+	.data : { 
+		*(.data) 
+		. = ALIGN(4096);
+		*(.data.init_task)
+	}
 	. = ALIGN(4096);
        idmap_pg_dir = .;
        . += 2 * 4096;

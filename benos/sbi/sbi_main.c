@@ -108,7 +108,7 @@ void sbi_main(void)
 	 * 所有地址空间都可以访问
 	 */
 	sbi_set_pmp(1, 0, -1UL, PMP_RWX);
-	sbi_set_pmp(0, 0x80300000, 0x40000, PMP_R);//优先级高
+	//sbi_set_pmp(0, 0x80300000, 0x40000, PMP_R);//优先级高
 
 	/* 设置跳转模式为S模式 */
 	val = read_csr(mstatus);

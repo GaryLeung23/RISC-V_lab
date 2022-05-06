@@ -24,8 +24,8 @@ _start:
 	la gp, __global_pointer$
 .option pop
 
-	call create_page_table
-	call enable_mmu_relocate
+	//call create_page_table
+	//call enable_mmu_relocate
 
 	/* 跳转到C语言 */
 	tail kernel_main

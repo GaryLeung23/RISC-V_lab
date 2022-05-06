@@ -1,6 +1,7 @@
 #include "asm/asm-offsets.h"
 #include "asm/csr.h"
 #include "mm.h"
+#include "asm/processor.h"
 
 .macro kernel_entry
 	addi sp, sp, -(PT_SIZE)
@@ -137,3 +138,52 @@ enable_mmu_relocate:
 	sfence.vma
 	csrw satp, a2
 	ret
+
+.align 2
+.global cpu_switch_to
+cpu_switch_to:
+	li    a4,  TASK_CPU_CONTEXT
+	add   a3, a0, a4
+	add   a4, a1, a4
+
+	/* 保存CPU上下文到prev进程的task_struct->cpu_context */
+	sd ra, 0(a3)
+	sd sp, 8(a3)
+	sd s0, 16(a3)
+	sd s1, 24(a3)
+	sd s2, 32(a3)
+	sd s3, 40(a3)
+	sd s4, 48(a3)
+	sd s5, 56(a3)
+	sd s6, 64(a3)
+	sd s7, 72(a3)
+	sd s8, 80(a3)
+	sd s9, 88(a3)
+	sd s10, 96(a3)
+	sd s11, 104(a3)
+
+	/* 从next进程的task_struct->cpu_context中恢复上下文到CPU */
+	ld ra, 0(a4)
+	ld sp, 8(a4)
+	ld s0, 16(a4)
+	ld s1, 24(a4)
+	ld s2, 32(a4)
+	ld s3, 40(a4)
+	ld s4, 48(a4)
+	ld s5, 56(a4)
+	ld s6, 64(a4)
+	ld s7, 72(a4)
+	ld s8, 80(a4)
+	ld s9, 88(a4)
+	ld s10, 96(a4)
+	ld s11, 104(a4)
+
+	ret
+
+.align 2
+.global ret_from_kernel_thread
+ret_from_kernel_thread:
+	/* Call fn(arg) */
+	la ra, ret_from_exception
+	move a0, s2
+	jr s1

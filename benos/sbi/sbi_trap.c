@@ -120,6 +120,7 @@ void delegate_traps(void)
 	unsigned long exceptions;
 
 	/* 因为在benos中还在使用sbi的 ecall,所以不能有CAUSE_SUPERVISOR_ECALL*/
+	/* 这里一定要将CAUSE_USER_ECALL 委托给S模式处理 */
 	interrupts = MIP_SSIP | MIP_STIP | MIP_SEIP;
 	exceptions = (1UL << CAUSE_MISALIGNED_FETCH) | (1UL << CAUSE_FETCH_PAGE_FAULT) |
                          (1UL << CAUSE_BREAKPOINT) | (1UL << CAUSE_LOAD_PAGE_FAULT) |

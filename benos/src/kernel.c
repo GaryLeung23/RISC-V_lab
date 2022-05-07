@@ -11,6 +11,7 @@
 #include "asm/memory.h"
 #include "asm/pgtable.h"
 #include "sched.h"
+#include "../usr/syscall.h"
 
 extern void trap_init(void);
 extern void trigger_load_access_fault();
@@ -419,7 +420,7 @@ extern union task_union init_task_union;
 #define DELAY_TIME 80000
 #endif
 
-void kernel_thread1(void)
+void user_thread1(void)
 {
 	unsigned long i = 0;
 	while (1) {
@@ -428,7 +429,7 @@ void kernel_thread1(void)
 	}
 }
 
-void kernel_thread2(void)
+void user_thread2(void)
 {
 	unsigned long y = 0;
 	while (1) {
@@ -437,21 +438,37 @@ void kernel_thread2(void)
 	}
 }
 
-void run_user_thread(void)
+int run_new_clone_thread(void *arg)
 {
 	unsigned long i = 0;
-       while (1) {
-	       delay(8000000);
-               printk("%s: running userspace: %llu\n", __func__, i++);
-       }
+
+	while (1) {
+		delay(DELAY_TIME);
+		printk("%s %llu\n", __func__, i++);
+	}
+	return 0;
 }
-void run_user_thread2(void)
+
+
+int run_user_thread(void)
 {
+	unsigned long child_stack;
+	//malloc是syscall
+	child_stack = malloc();
+	if (child_stack < 0) {
+		printk("cannot allocate memory\n");
+		return -1;
+	}
+
+	printk("malloc success 0x%x\n", child_stack);
+
 	unsigned long i = 0;
-       while (1) {
-	       delay(8000000);
-               printk("%s: running userspace2: %llu\n", __func__, i++);
-       }
+	while (1) {
+		delay(DELAY_TIME);
+		printk("%s: %llu\n", __func__, i++);
+	}
+
+	return 0;
 }
 void user_thread(void)
 {
@@ -459,12 +476,20 @@ void user_thread(void)
        if (move_to_user_space((unsigned long)&run_user_thread))
                printk("error move_to_user_space\n");
 }
-void user_thread2(void)
+void move_thread1(void)
 {
 
-       if (move_to_user_space((unsigned long)&run_user_thread2))
+       if (move_to_user_space((unsigned long)&user_thread1))
                printk("error move_to_user_space\n");
 }
+
+void move_thread2(void)
+{
+
+       if (move_to_user_space((unsigned long)&user_thread2))
+               printk("error move_to_user_space\n");
+}
+
 void kernel_main(void)
 {
 	clean_bss();
@@ -504,12 +529,12 @@ void kernel_main(void)
 
 	int pid;
 
-	pid = do_fork(PF_KTHREAD, (unsigned long)&kernel_thread1, 0);
+	pid = do_fork(PF_KTHREAD, (unsigned long)&move_thread1, 0);
 	if (pid < 0)
 		printk("create thread fail\n");
 	printk("pid %d created\n", pid);
 
-	pid = do_fork(PF_KTHREAD, (unsigned long)&kernel_thread2, 0);
+	pid = do_fork(PF_KTHREAD, (unsigned long)&move_thread2, 0);
 	if (pid < 0)
 		printk("create thread fail\n");
 	
@@ -520,13 +545,6 @@ void kernel_main(void)
                printk("create thread fail\n");
 
 	printk("pid %d created\n", pid);
-
-	pid = do_fork(PF_KTHREAD, (unsigned long)&user_thread2, 0);
-       if (pid < 0)
-               printk("create thread fail\n");
-
-	printk("pid %d created\n", pid);
-
 
 	printk("sstatus:0x%lx\n", read_csr(sstatus));
 	arch_local_irq_enable();

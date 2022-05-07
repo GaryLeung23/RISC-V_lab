@@ -21,7 +21,7 @@ static void invoke_syscall(struct pt_regs *regs, int syscall_no,
 	} else {
 		ret = sys_ni_syscall(regs);
 	}
-	//返回值保存在a0
+	//设置fn返回值保存在a0
 	regs->a0 = ret;
 }
 
@@ -72,6 +72,12 @@ long __riscv_sys_write(struct pt_regs *regs)
 
 }
 
+long __riscv_sys_clone(struct pt_regs *regs)
+{
+	return do_fork(regs->a0, regs->a1,
+			regs->a2);
+}
+
 long __riscv_sys_malloc(struct pt_regs *regs)
 {
 	unsigned long addr;
@@ -94,5 +100,6 @@ const syscall_fn_t syscall_table[__NR_syscalls] = {
 	__SYSCALL(__NR_close, sys_close)
 	__SYSCALL(__NR_read, sys_read)
 	__SYSCALL(__NR_write, sys_write)
+	__SYSCALL(__NR_clone, sys_clone)
 	__SYSCALL(__NR_malloc, sys_malloc)
 };

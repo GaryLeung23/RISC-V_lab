@@ -292,3 +292,11 @@ ret_from_kernel_thread:
 	move a0, s2
 	/* jr 不带返回地址的跳转 */
 	jr s1
+
+/*
+ fork后的子进程从这里开始返回用户态
+ */
+.global ret_from_fork
+ret_from_fork:
+	la ra, ret_from_exception
+	tail schedule_tail

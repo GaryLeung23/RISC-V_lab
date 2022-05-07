@@ -140,10 +140,15 @@ void do_exception(struct pt_regs *regs, unsigned long scause)
 	} else {
 		switch (scause) {
 		case EXC_SYSCALL:
+			//RISC-V的ecall指令是异常返回后直接执行下一条指令,并且需要手动+4.有些架构是硬件自动计算.
+			/*
+			 * 这里要先让sepc加4个字节，否则clone/fork系统调用创建的子进程会有问题。
+			 * 因为子进程拷贝父进程的regs，子进程的sepc没加4,子进程sret返回到
+			 * 用户空间时导致处理器出问题。
+			 */
+			regs->sepc += 4;
 			//处理syscall引发的异常
 			riscv_svc_handler(regs);
-			//RISC-V的ecall指令是异常返回后直接执行下一条指令,并且需要手动+4.有些架构是硬件自动计算.
-			regs->sepc += 4;
 			break;
 		default:
 			inf = ec_to_fault_info(scause);

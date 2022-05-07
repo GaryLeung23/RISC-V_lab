@@ -25,3 +25,60 @@ syscall:
 	move     a7, t0
 	ecall
 	ret
+
+/*
+   int clone(int (*fn)(void *arg),     a0
+            void *child_stack,         a1
+	    int flags,                 a2
+	    void *arg)                 a3
+ */
+.align  2
+.global __clone
+__clone:
+	/*把fn和arg保存到child_stack栈里面*/
+	/*在clone子进程用户栈底(栈的最高地址)先存放arg与fn*/
+	addi a1, a1, -16
+	sd a0, (a1)
+	sd a3, 8(a1)
+
+	/* call syscall*/
+	move a0, a2
+	//设置syscall号到a7
+	li     a7, __NR_clone
+	/*
+	 * 到此为止
+	 * a0是flags,
+	 * a1是clone子进程用户栈底(栈的最高地址) -16 
+	 * a7是__NR_clone
+	 */
+	ecall
+
+	/*
+	  1. 父进程返回时，返回值为 子进程（线程）的pid
+	  2. 而子进程返回时， 返回值为0.
+	  由于子进程在do_fork期间，直接 把 父进程的
+	  pt_regs栈框拷贝过来的, 因此把pt_regs->sepc和
+	  pt_regs->sstatus也拷贝了父进程的， 所以当子进程
+	  从内核态返回到用户空间时, 它也是返回到 这里。
+
+	  子进程返回路径：
+	  调度器选择子进程 ->
+	      进程切换到子进程->
+		    ret_from_fork->
+		       ret_to_usr->
+		               返回到此
+	 */
+	beqz a0, thread_start
+	ret
+
+.align 2
+thread_start:
+	/* 从child_stack栈(clone子进程用户栈)取出fn和arg */
+	ld a1, (sp)
+	ld a0, 8(sp)
+
+	/* 调用clone的回调函数fn() */
+	jalr   a1
+
+	/* exit */
+	ret

@@ -50,7 +50,7 @@ static int copy_thread(unsigned long clone_flags, struct task_struct *p,
 		unsigned long fn, unsigned long arg)
 {
 	struct pt_regs *childregs;
-
+	
 	childregs = task_pt_regs(p);
 	memset(childregs, 0, sizeof(struct pt_regs));
 	memset(&p->cpu_context, 0, sizeof(struct cpu_context));
@@ -66,6 +66,21 @@ static int copy_thread(unsigned long clone_flags, struct task_struct *p,
 		p->cpu_context.s[2] = arg;
 
 		p->cpu_context.ra = (unsigned long)ret_from_kernel_thread;
+	} else {//clone_flags==0 这是是在S模式(内核态)
+		//current是父进程的内核栈tp
+		//这里将父进程的中断现场 copy给子进程
+		*childregs = *task_pt_regs(current);
+		//fork一般是父进程返回pid,子进程返回0。
+		//父进程是在invoke_syscall中设置a0
+		//子进程是在这里设置
+		childregs->a0 = 0;
+		//如果clone_flags为0,那么fn参数其实是clone子进程用户栈底(栈的最高地址) -16
+		unsigned long usr_sp = fn;
+		if (usr_sp)
+			childregs->sp = usr_sp;
+		//因为我们是从用户态调用clone函数的,所以这里不用清设置childregs->sstatus,用父进程就可以
+
+		p->cpu_context.ra = (unsigned long)ret_from_fork;
 	}
 
 	p->cpu_context.sp = (unsigned long)childregs; /* kernel sp */
@@ -84,7 +99,7 @@ int do_fork(unsigned long clone_flags, unsigned long fn, unsigned long arg)
 {
 	struct task_struct *p;
 	int pid;
-
+	/* 分配内核栈 */
 	p = (struct task_struct *)get_free_page();
 	if (!p)
 		goto error;

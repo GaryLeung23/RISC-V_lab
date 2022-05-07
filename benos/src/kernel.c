@@ -453,6 +453,9 @@ int run_new_clone_thread(void *arg)
 int run_user_thread(void)
 {
 	unsigned long child_stack;
+	int ret;
+	unsigned long i = 0;
+
 	//malloc是syscall
 	child_stack = malloc();
 	if (child_stack < 0) {
@@ -462,7 +465,20 @@ int run_user_thread(void)
 
 	printk("malloc success 0x%x\n", child_stack);
 
-	unsigned long i = 0;
+	memset((void *)child_stack, 0, PAGE_SIZE);
+
+	printk("child_stack 0x%x\n", child_stack);
+
+	//flag = 0
+	ret = clone(&run_new_clone_thread,
+			(void *)(child_stack + PAGE_SIZE), 0, NULL);
+	if (ret < 0) {
+		printk("%s: error while clone\n", __func__);
+		return ret;
+	}
+
+	printk("clone done, 0x%llx 0x%llx\n", &run_new_clone_thread, child_stack + PAGE_SIZE);
+
 	while (1) {
 		delay(DELAY_TIME);
 		printk("%s: %llu\n", __func__, i++);

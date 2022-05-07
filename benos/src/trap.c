@@ -135,7 +135,7 @@ void do_exception(struct pt_regs *regs, unsigned long scause)
 
 void trap_init(void)
 {
-	// sscratch的作用是什么？感觉不到其用处
+	// sscratch的作用保存tp寄存器的值,当发生中断时可以快速获取tp的值,即task_struct首地址,虽然sscratch只有一个,但是处理好多线程操作都不会出错
 	write_csr(sscratch, 0);
 	/* 设置异常向量表地址 */
 	write_csr(stvec, do_exception_vector);

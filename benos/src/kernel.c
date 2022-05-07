@@ -437,6 +437,34 @@ void kernel_thread2(void)
 	}
 }
 
+void run_user_thread(void)
+{
+	unsigned long i = 0;
+       while (1) {
+	       delay(8000000);
+               printk("%s: running userspace: %llu\n", __func__, i++);
+       }
+}
+void run_user_thread2(void)
+{
+	unsigned long i = 0;
+       while (1) {
+	       delay(8000000);
+               printk("%s: running userspace2: %llu\n", __func__, i++);
+       }
+}
+void user_thread(void)
+{
+
+       if (move_to_user_space((unsigned long)&run_user_thread))
+               printk("error move_to_user_space\n");
+}
+void user_thread2(void)
+{
+
+       if (move_to_user_space((unsigned long)&run_user_thread2))
+               printk("error move_to_user_space\n");
+}
 void kernel_main(void)
 {
 	clean_bss();
@@ -447,8 +475,8 @@ void kernel_main(void)
 	uart_init();
 	//sbi ecall
 
-	sbi_put_string("Welcome RISC-V!\r\n");
-	init_printk_done(sbi_putchar);
+	printk("Welcome RISC-V!\r\n");
+	init_printk_done(putchar);
 
 	printk("printk init done\n");
 
@@ -486,6 +514,19 @@ void kernel_main(void)
 		printk("create thread fail\n");
 	
 	printk("pid %d created\n", pid);
+
+	pid = do_fork(PF_KTHREAD, (unsigned long)&user_thread, 0);
+       if (pid < 0)
+               printk("create thread fail\n");
+
+	printk("pid %d created\n", pid);
+
+	pid = do_fork(PF_KTHREAD, (unsigned long)&user_thread2, 0);
+       if (pid < 0)
+               printk("create thread fail\n");
+
+	printk("pid %d created\n", pid);
+
 
 	printk("sstatus:0x%lx\n", read_csr(sstatus));
 	arch_local_irq_enable();

@@ -58,6 +58,8 @@ struct task_struct {
 	struct cpu_context cpu_context;//表示进程切换时的硬件上下文
 	int preempt_count;//内核是否可以抢占,大于0表示不可抢占状态
 	int need_resched;//该进程需要被调度,1表示需要
+	unsigned long kernel_sp;
+	unsigned long user_sp;
 	enum task_state state;//表示进程的状态
 	enum task_flags flags;
 	int pid;//示进程的ID
@@ -116,6 +118,7 @@ extern union task_union init_task_union;
 extern const struct sched_class simple_sched_class;
 
 extern void ret_from_kernel_thread(void);
+extern void ret_from_fork(void);
 int do_fork(unsigned long clone_flags, unsigned long fn, unsigned long arg);
 struct task_struct * switch_to(struct task_struct *prev,
 		struct task_struct *next);
@@ -129,6 +132,7 @@ struct task_struct *pick_next_task(struct run_queue *rq,
 		struct task_struct *prev);
 void tick_handle_periodic(void);
 void wake_up_process(struct task_struct *p);
+int move_to_user_space(unsigned long pc);
 
 static inline void clear_task_resched(struct task_struct *p)
 {
@@ -181,6 +185,5 @@ static inline void preempt_sub(int val)
 
 #define __irq_enter() preempt_add(HARDIRQ_OFFSET)
 #define __irq_exit() preempt_sub(HARDIRQ_OFFSET)
-
 
 #endif  /* __ASSEMBLY__ */

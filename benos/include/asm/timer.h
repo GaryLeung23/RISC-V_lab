@@ -3,7 +3,7 @@
 
 /*qemu virt的 SIFIVE_CLINT_TIMEBASE_FREQ = 10000000*/
 #define CLINT_TIMEBASE_FREQ 10000000
-#define HZ 1000
+#define HZ 100
 
 void handle_timer_irq(void);
 void timer_init(void);

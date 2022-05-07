@@ -4,10 +4,28 @@
 #include "asm/processor.h"
 
 .macro kernel_entry
+	/*  内核态陷入时sscratch为0:这时候将sp(内核栈)保存到进程内核栈的task_init中kernel_sp与user_sp,此时sp为内核栈
+	 *  用户态陷入时sscratch为tp(内核栈的最低地址):这时候将sp(用户栈)保存到进程内核栈的task_init中user_sp,并读出task_struc->kernel_sp,此时sp为内核栈
+	 *  
+	 *  异常处理无论是内核线程还是用户线程都是使用内核栈的
+	 */
+	/* 同时执行 tp = sscratch;sscratch=tp,相当于互换
+	   如果从用户态陷入到内核，sscratch寄存器保存了指向task_struct的指针
+	   如果从内核态下陷入，那么tp寄存器一直指向task_struct(从结果来看是这样的)
+	 */
+	csrrw tp, sscratch, tp
+	bnez tp, _save_user_sp
+	
+_save_kernel_sp:
+	csrr tp, sscratch
+	sd sp, TASK_TI_KERNEL_SP(tp)
+_save_user_sp:
+	/* 把用户态的sp保存到task_struc->user_sp*/
+	sd sp, TASK_TI_USER_SP(tp)
+	/* 从task_struc->kernel_sp中加载正确的内核态sp*/
+	ld sp, TASK_TI_KERNEL_SP(tp)
+
 	addi sp, sp, -(PT_SIZE)
-
-	csrw sscratch, tp
-
 	sd x1,  PT_RA(sp)
 	sd x3,  PT_GP(sp)
 	sd x5,  PT_T0(sp)
@@ -38,6 +56,15 @@
 	sd x30, PT_T5(sp)
 	sd x31, PT_T6(sp)
 
+	/*
+	   内核态陷入时，内核态sp保存到了TASK_TI_USER_SP
+	   用户态陷入时，用户态的sp也保存到了TASK_TI_USER_SP
+	   保存SP -> PT_SP(sp)
+	   异常返回后使用的sp
+	 */
+	ld s1, TASK_TI_USER_SP(tp)
+	sd s1, PT_SP(sp)
+
 	csrr s1, sstatus
 	sd s1, PT_SSTATUS(sp)
 
@@ -57,9 +84,6 @@
 	csrr s5, sscratch
 	sd s5, PT_TP(sp)
 
-	/*保存SP 原栈底保存在ptregs->sp*/
-	addi s1, sp, PT_SIZE 
-	sd s1, PT_SP(sp)
 .endm
 
 .macro kernel_exit
@@ -113,6 +137,12 @@ do_exception_vector:
 	/*保存异常（中断）现场*/
 	kernel_entry
 
+	/* 
+	 * sscratch清0,这样如果出现递归异常发生时,异常向量知道它来自内核.
+	 * 后续若是判断为用户态陷入再设置为tp(内核栈的最低地址)
+	 */
+	csrw sscratch, x0
+
 	la ra, ret_from_exception
 
 	mv a0, sp /* pt_regs */
@@ -121,14 +151,45 @@ do_exception_vector:
 
 ret_from_exception:
 	ld s1, PT_SSTATUS(sp)
-	/* 清sstatus的SIE,也就是关中断总开关,一般时候是不需要的，但是在ret_from_kernel_thread中打开了中断,所以这里关闭中断 */
+	/* 清sstatus的SIE,也就是关中断总开关,一般时候是不需要的，但是在schedule_tail中打开了中断,所以这里关闭中断 */
 	csrc sstatus, SR_SIE
-	/*判断是不是内核态触发的中断  这里目前只处理内核态触发的中断*/
+	/*判断是不是内核态触发的中断*/
 	andi s1, s1, SR_SPP
-	bnez s1, resume_kernel
+	bnez s1, ret_to_kernel
 
-resume_kernel:
-	/* tp是进程内核栈的最低地址,即task_struct的地址 */
+/* 
+   返回用户空间
+ */
+ret_to_user:
+	/*判断是否要抢占当前进程*/
+	/* Interrupts must be disabled here so flags are checked atomically */
+	lw s1, TASK_TI_NEED_RESCHED(tp)
+	andi s1, s1, _TIF_NEED_RESCHED
+	bnez s1, work_resched
+no_work_pending:
+	/* 这里马上要返回到用户态了
+	   1. 要把内核态的sp保存到task_struct->kernel_sp
+	   2. 把task_struct的指针保存到sscratch，下回从用户态陷入到
+	      内核态时候，就能获取task_struct的指针
+	 */
+	/*从内核空间返回用户空间才做的事情,所以要放在判断调度之后,
+	 *因为如果需要调度会有可能直接切换后是内核进程,还是在内核空间。
+	 *当从其他地方需要切换回用户进程,就会运行到这里。
+	 */
+	addi s1, sp, PT_SIZE
+    sd s1, TASK_TI_KERNEL_SP(tp)
+	csrw sscratch, tp
+	j restore_all
+
+work_resched:
+	call schedule
+	j no_work_pending ////linux内核这里是j ret_from_exception
+
+/*
+   返回内核空间
+ */
+ret_to_kernel:
+    /* tp是进程内核栈的最低地址,即task_struct的地址 */
 	/*判断当前内核是否 处于 不可抢占状态，preempt_count > 0表示不可抢占状态*/
 	lw s1, TASK_TI_PREEMPT_COUNT(tp)
 	bnez s1, restore_all
@@ -139,7 +200,7 @@ need_resched:
 	beqz s1, restore_all
 	/*准备抢占当前进程*/
 	call preempt_schedule_irq
-	j need_resched
+	j need_resched  //linux内核没有这句
 restore_all:
 	/*恢复中断现场*/
 	kernel_exit
@@ -224,7 +285,11 @@ cpu_switch_to:
 ret_from_kernel_thread:
 	/* 第一次运行的进程来收拾prev进程的烂摊子, 比如打开中断等*/
 	call schedule_tail
-	/* 目前fn要是while(1)循环,否则会出错，所以这里的ra返回值只是个临时值，后续会改进 */
+	/* 如果是内核进程，目前fn要是while(1)循环,否则会出错。因为fn完成后就会返回到ret_from_exception执行，
+	 * 那么就会从异常返回,但是新进程中pt_regs是无效的,所以sret就会fault
+	 *
+	 * 如果是想将内核进程move到U模式,那么fn需要调用move_to_user_space
+	 */
 	la ra, ret_from_exception
 	/* Call fn(arg) */
 	move a0, s2

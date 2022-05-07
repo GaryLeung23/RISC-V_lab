@@ -20,6 +20,8 @@ BUILD_DIR = $(BUILD_ROOT)/benos
 SRC_DIR = src
 LIB_DIR = lib
 BUILD_LIB_DIR = $(BUILD_ROOT)/lib
+USR_DIR = usr
+BUILD_USR_DIR = $(BUILD_ROOT)/usr
 
 all : clean benos.bin mysbi.bin benos_payload.bin
 
@@ -43,13 +45,23 @@ $(BUILD_DIR)/%_s.o: $(SRC_DIR)/%.S
 $(BUILD_LIB_DIR)/%_c.o: $(LIB_DIR)/%.c
 	$(CMD_PREFIX)mkdir -p $(BUILD_LIB_DIR); echo " CC   $@" ; $(GNU)-gcc $(COPS) -c $< -o $@
 
+$(BUILD_USR_DIR)/%_c.o: $(USR_DIR)/%.c
+	$(CMD_PREFIX)mkdir -p $(BUILD_USR_DIR); echo " CC   $@" ; $(GNU)-gcc $(COPS) -c $< -o $@
+
+$(BUILD_USR_DIR)/%_s.o: $(USR_DIR)/%.S
+	$(CMD_PREFIX)mkdir -p $(BUILD_USR_DIR); echo " AS   $@"; $(GNU)-gcc $(COPS) $(AOPS) -c $< -o $@
+
 C_FILES = $(wildcard $(SRC_DIR)/*.c)
 LIB_FILES = $(wildcard $(LIB_DIR)/*.c)
 ASM_FILES = $(wildcard $(SRC_DIR)/*.S)
+USR_C_FILES = $(wildcard $(USR_DIR)/*.c)
+USR_A_FILES = $(wildcard $(USR_DIR)/*.S)
 
 OBJ_FILES = $(C_FILES:$(SRC_DIR)/%.c=$(BUILD_DIR)/%_c.o)
 OBJ_FILES += $(ASM_FILES:$(SRC_DIR)/%.S=$(BUILD_DIR)/%_s.o)
 OBJ_FILES += $(LIB_FILES:$(LIB_DIR)/%.c=$(BUILD_LIB_DIR)/%_c.o)
+OBJ_FILES += $(USR_C_FILES:$(USR_DIR)/%.c=$(BUILD_USR_DIR)/%_c.o)
+OBJ_FILES += $(USR_A_FILES:$(USR_DIR)/%.S=$(BUILD_USR_DIR)/%_s.o)
 
 DEP_FILES = $(OBJ_FILES:%.o=%.d)
 -include $(DEP_FILES)

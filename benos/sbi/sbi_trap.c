@@ -23,7 +23,7 @@ static void sbi_trap_error(struct sbi_trap_regs *regs, const char *msg, int rc)
 		regs->mepc, regs->mstatus);
 	printk(" gp : %016lx tp : %016lx t0 : %016lx\n",
 		regs->gp, regs->tp, regs->t0);
-	printk(" t1 : %016lx t2 : %016lx t3 : %016lx\n",
+	printk(" t1 : %016lx t2 : %016lx s0 : %016lx\n",
 		regs->t1, regs->t2, regs->s0);
 	printk(" s1 : %016lx a0 : %016lx a1 : %016lx\n",
 		regs->s1, regs->a0, regs->a1);
@@ -120,6 +120,7 @@ void delegate_traps(void)
 	unsigned long exceptions;
 
 	/* 因为在benos中还在使用sbi的 ecall,所以不能有CAUSE_SUPERVISOR_ECALL*/
+	/* 这里一定要将CAUSE_USER_ECALL 委托给S模式处理 */
 	interrupts = MIP_SSIP | MIP_STIP | MIP_SEIP;
 	exceptions = (1UL << CAUSE_MISALIGNED_FETCH) | (1UL << CAUSE_FETCH_PAGE_FAULT) |
                          (1UL << CAUSE_BREAKPOINT) | (1UL << CAUSE_LOAD_PAGE_FAULT) |

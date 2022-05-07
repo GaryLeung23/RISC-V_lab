@@ -5,6 +5,8 @@
 #include "type.h"
 #include "asm/timer.h"
 #include "asm/plic.h"
+#include "irq.h"
+#include "asm/syscall.h"
 
 extern void do_exception_vector(void);
 
@@ -104,6 +106,16 @@ static inline const struct fault_info *ec_to_fault_info(unsigned int scause)
 #define INTERRUPT_CAUSE_TIMER       5
 #define INTERRUPT_CAUSE_EXTERNAL    9
 
+#define EXC_INST_MISALIGNED     0
+#define EXC_INST_ACCESS         1
+#define EXC_BREAKPOINT          3
+#define EXC_LOAD_ACCESS         5
+#define EXC_STORE_ACCESS        7
+#define EXC_SYSCALL             8
+#define EXC_INST_PAGE_FAULT     12
+#define EXC_LOAD_PAGE_FAULT     13
+#define EXC_STORE_PAGE_FAULT    15
+
 void do_exception(struct pt_regs *regs, unsigned long scause)
 {
 	const struct fault_info *inf;
@@ -126,10 +138,18 @@ void do_exception(struct pt_regs *regs, unsigned long scause)
 			panic();
 		}
 	} else {
-		inf = ec_to_fault_info(scause);
-		
-		if (!inf->fn(regs, inf->name))
+		switch (scause) {
+		case EXC_SYSCALL:
+			//处理syscall引发的异常
+			riscv_svc_handler(regs);
+			//RISC-V的ecall指令是异常返回后直接执行下一条指令,并且需要手动+4.有些架构是硬件自动计算.
+			regs->sepc += 4;
+			break;
+		default:
+			inf = ec_to_fault_info(scause);
+			if (!inf->fn(regs, inf->name))
 			return;
+		}
 	}
 }
 

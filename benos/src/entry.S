@@ -124,8 +124,8 @@ restore_all:
 
 .global trigger_load_access_fault
 trigger_load_access_fault:
-	li a0, 0x0
-	ld a0, (a0)
+	li a0, 0x80300000
+	sd a0, (a0)
 	ret
 
 .global enable_mmu_relocate

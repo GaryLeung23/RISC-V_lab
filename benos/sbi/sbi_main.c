@@ -4,6 +4,7 @@
 #include "uart.h"
 #include "sbi_trap.h"
 #include "printk.h"
+#include "sbi_lib.h"
 
 #define FW_JUMP_ADDR 0x80200000
 
@@ -106,8 +107,8 @@ void sbi_main(void)
 	 * 配置PMP
 	 * 所有地址空间都可以访问
 	 */
-	sbi_set_pmp(0, 0, -1UL, PMP_RWX);//优先级高
-	// sbi_set_pmp(1, 0x80000000, 0x40000, PMP_RWX);
+	sbi_set_pmp(1, 0, -1UL, PMP_RWX);
+	sbi_set_pmp(0, 0x80300000, 0x40000, PMP_R);//优先级高
 
 	/* 设置跳转模式为S模式 */
 	val = read_csr(mstatus);

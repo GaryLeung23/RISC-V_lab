@@ -451,6 +451,8 @@ void kernel_main(void)
 	
 	dump_pgtable();
 
+	trigger_load_access_fault();
+
 	test_walk_pgtable();
 	test_mmu();
 

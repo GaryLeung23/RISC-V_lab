@@ -7,6 +7,8 @@
 #include "asm/plic.h"
 #include "irq.h"
 #include "asm/syscall.h"
+#include "asm/trap.h"
+#include "asm/sbi.h"
 
 extern void do_exception_vector(void);
 
@@ -106,19 +108,32 @@ static inline const struct fault_info *ec_to_fault_info(unsigned int scause)
 #define INTERRUPT_CAUSE_TIMER       5
 #define INTERRUPT_CAUSE_EXTERNAL    9
 
-#define EXC_INST_MISALIGNED     0
-#define EXC_INST_ACCESS         1
-#define EXC_BREAKPOINT          3
-#define EXC_LOAD_ACCESS         5
-#define EXC_STORE_ACCESS        7
-#define EXC_SYSCALL             8
-#define EXC_INST_PAGE_FAULT     12
-#define EXC_LOAD_PAGE_FAULT     13
-#define EXC_STORE_PAGE_FAULT    15
 
-void do_exception(struct pt_regs *regs, unsigned long scause)
+static int vs_sbi_ecall_handle(unsigned int id, struct pt_regs *regs)
+{
+	int ret = 0;
+
+	switch (id) {
+	case SBI_EXIT_VM_TEST:
+		printk("%s: running in HS mode\n", __func__);
+		printk("hstatus 0x%lx\n", read_csr(CSR_HSTATUS));
+		ret = 0;
+		break;
+	}
+
+	/* 系统调用返回的是系统调用指令（例如ECALL指令）的下一条指令 */
+	if (!ret)
+		regs->sepc += 4;
+
+	return ret;
+}
+
+int do_exception(struct pt_regs *regs, unsigned long scause)
 {
 	const struct fault_info *inf;
+	unsigned long ecall_id = regs->a7;
+	const char *msg = "trap handler failed";
+	int ret = 0;
 
 	//printk("%s, scause:0x%lx, sstatus=0x%lx\n", __func__, scause, regs->sstatus);
 
@@ -139,7 +154,7 @@ void do_exception(struct pt_regs *regs, unsigned long scause)
 		}
 	} else {
 		switch (scause) {
-		case EXC_SYSCALL:
+		case CAUSE_USER_ECALL:
 			//RISC-V的ecall指令是异常返回后直接执行下一条指令,并且需要手动+4.有些架构是硬件自动计算.
 			/*
 			 * 这里要先让sepc加4个字节，否则clone/fork系统调用创建的子进程会有问题。
@@ -150,16 +165,43 @@ void do_exception(struct pt_regs *regs, unsigned long scause)
 			//处理syscall引发的异常
 			riscv_svc_handler(regs);
 			break;
+		 case CAUSE_VIRTUAL_SUPERVISOR_ECALL:
+			ret = vs_sbi_ecall_handle(ecall_id, regs);
+			msg = "virtual ecall handler failed";
+			break;
 		default:
 			inf = ec_to_fault_info(scause);
 			if (!inf->fn(regs, inf->name))
-			return;
+			return ret;
 		}
 	}
+
+	if (ret) {
+		printk("%s\n", msg);
+		panic();
+	}
+
+	return ret;
+}
+
+static void hs_delegate_traps(void)
+{
+	unsigned long exceptions;
+	/* 这里将一些异常 委托给VS模式处理   注意：ECALL from VS-Mode 是不能委托给VS模式处理的*/
+	exceptions = (1UL << CAUSE_MISALIGNED_FETCH) | (1UL << CAUSE_FETCH_PAGE_FAULT) |
+                         (1UL << CAUSE_BREAKPOINT) | (1UL << CAUSE_LOAD_PAGE_FAULT) |
+                         (1UL << CAUSE_STORE_PAGE_FAULT) | (1UL << CAUSE_USER_ECALL) |
+			 (1UL << CAUSE_LOAD_ACCESS) | (1UL << CAUSE_STORE_ACCESS) |
+			 (1UL << CAUSE_ILLEGAL_INSTRUCTION);
+
+	write_csr(CSR_HEDELEG, exceptions);
 }
 
 void trap_init(void)
 {
+	/* 委托异常到VS模式处理 */
+	hs_delegate_traps();
+
 	// sscratch的作用保存tp寄存器的值,当发生中断时可以快速获取tp的值,即task_struct首地址,虽然sscratch只有一个,但是处理好多线程操作都不会出错
 	write_csr(sscratch, 0);
 	/* 设置异常向量表地址 */

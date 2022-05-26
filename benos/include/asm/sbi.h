@@ -7,6 +7,7 @@
 #define SBI_SET_TIMER 0
 #define SBI_CONSOLE_PUTCHAR 0x1
 #define SBI_CONSOLE_GETCHAR 0x2
+#define SBI_EXIT_VM_TEST 0x100
 
 #define SBI_CALL(which, arg0, arg1, arg2) ({			\
 	register unsigned long a0 asm ("a0") = (unsigned long)(arg0);	\

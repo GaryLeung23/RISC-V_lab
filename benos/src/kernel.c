@@ -506,6 +506,14 @@ void move_thread2(void)
                printk("error move_to_user_space\n");
 }
 
+void vs_thread(void)
+{
+	vs_main();
+
+	while (1)
+		;
+}
+
 void kernel_main(void)
 {
 	clean_bss();
@@ -520,6 +528,8 @@ void kernel_main(void)
 	init_printk_done(putchar);
 
 	printk("printk init done\n");
+
+	printk("hstatus 0x%lx\n", read_csr(CSR_HSTATUS));
 
 	/* lab5-4：查表*/
 	print_func_name(0x800880);
@@ -545,6 +555,7 @@ void kernel_main(void)
 
 	int pid;
 
+#if 0
 	pid = do_fork(PF_KTHREAD, (unsigned long)&move_thread1, 0);
 	if (pid < 0)
 		printk("create thread fail\n");
@@ -560,6 +571,12 @@ void kernel_main(void)
        if (pid < 0)
                printk("create thread fail\n");
 
+	printk("pid %d created\n", pid);
+#endif
+
+	pid = do_fork(PF_KTHREAD, (unsigned long)&vs_thread, 0);
+	if (pid < 0)
+		printk("create thread fail\n");
 	printk("pid %d created\n", pid);
 
 	printk("sstatus:0x%lx\n", read_csr(sstatus));

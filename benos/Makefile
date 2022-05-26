@@ -22,6 +22,8 @@ LIB_DIR = lib
 BUILD_LIB_DIR = $(BUILD_ROOT)/lib
 USR_DIR = usr
 BUILD_USR_DIR = $(BUILD_ROOT)/usr
+VIRT_DIR = virt
+BUILD_VIRT_DIR = $(BUILD_ROOT)/virt
 
 all : clean benos.bin mysbi.bin benos_payload.bin
 
@@ -51,17 +53,27 @@ $(BUILD_USR_DIR)/%_c.o: $(USR_DIR)/%.c
 $(BUILD_USR_DIR)/%_s.o: $(USR_DIR)/%.S
 	$(CMD_PREFIX)mkdir -p $(BUILD_USR_DIR); echo " AS   $@"; $(GNU)-gcc $(COPS) $(AOPS) -c $< -o $@
 
+$(BUILD_VIRT_DIR)/%_c.o: $(VIRT_DIR)/%.c
+	$(CMD_PREFIX)mkdir -p $(BUILD_VIRT_DIR); echo " CC   $@" ; $(GNU)-gcc $(COPS) -c $< -o $@
+
+$(BUILD_VIRT_DIR)/%_s.o: $(VIRT_DIR)/%.S
+	$(CMD_PREFIX)mkdir -p $(BUILD_VIRT_DIR); echo " AS   $@"; $(GNU)-gcc $(COPS) $(AOPS) -c $< -o $@
+	
 C_FILES = $(wildcard $(SRC_DIR)/*.c)
 LIB_FILES = $(wildcard $(LIB_DIR)/*.c)
 ASM_FILES = $(wildcard $(SRC_DIR)/*.S)
 USR_C_FILES = $(wildcard $(USR_DIR)/*.c)
 USR_A_FILES = $(wildcard $(USR_DIR)/*.S)
+VIRT_C_FILES = $(wildcard $(VIRT_DIR)/*.c)
+VIRT_A_FILES = $(wildcard $(VIRT_DIR)/*.S)
 
 OBJ_FILES = $(C_FILES:$(SRC_DIR)/%.c=$(BUILD_DIR)/%_c.o)
 OBJ_FILES += $(ASM_FILES:$(SRC_DIR)/%.S=$(BUILD_DIR)/%_s.o)
 OBJ_FILES += $(LIB_FILES:$(LIB_DIR)/%.c=$(BUILD_LIB_DIR)/%_c.o)
 OBJ_FILES += $(USR_C_FILES:$(USR_DIR)/%.c=$(BUILD_USR_DIR)/%_c.o)
 OBJ_FILES += $(USR_A_FILES:$(USR_DIR)/%.S=$(BUILD_USR_DIR)/%_s.o)
+OBJ_FILES += $(VIRT_C_FILES:$(VIRT_DIR)/%.c=$(BUILD_VIRT_DIR)/%_c.o)
+OBJ_FILES += $(VIRT_A_FILES:$(VIRT_DIR)/%.S=$(BUILD_VIRT_DIR)/%_s.o)
 
 DEP_FILES = $(OBJ_FILES:%.o=%.d)
 -include $(DEP_FILES)
@@ -117,14 +129,15 @@ benos_payload.bin: $(SBI_SRC_DIR)/sbi_linker_payload.ld $(SBI_OBJ_FILES) $(OBJ_F
 #  run qemu
 ##############
 ifeq ($(board), qemu)
+QEMU = qemu-system-riscv64-7.0
 QEMU_FLAGS  += -nographic -machine virt -m 128M 
 QEMU_BIOS = -bios mysbi.bin
 run:
-	qemu-system-riscv64-7.0 $(QEMU_FLAGS) $(QEMU_BIOS) -kernel benos.elf
+	$(QEMU) $(QEMU_FLAGS) $(QEMU_BIOS) -kernel benos.elf
 debug:
-	qemu-system-riscv64-7.0 $(QEMU_FLAGS) $(QEMU_BIOS) -kernel benos.elf -S -s
+	$(QEMU) $(QEMU_FLAGS) $(QEMU_BIOS) -kernel benos.elf -S -s
 payload:
-	qemu-system-riscv64-7.0 $(QEMU_FLAGS) -bios none -device loader,file=benos_payload.bin,addr=0x80000000
+	$(QEMU) $(QEMU_FLAGS) -bios none -device loader,file=benos_payload.bin,addr=0x80000000
 
 else ifeq ($(board), nemu)
 run:

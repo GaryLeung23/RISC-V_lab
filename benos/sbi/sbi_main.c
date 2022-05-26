@@ -90,6 +90,12 @@ int sbi_set_pmp(int reg_idx, unsigned long start, unsigned long size, unsigned l
 	return 0;
 }
 
+/* misa 是Machine ISA Register  查看hart支持的ISA */
+static int check_h_extension(void)
+{
+	return read_csr(misa) & (1 << 7);
+}
+
 /*
  * 运行在M模式
  */
@@ -109,6 +115,8 @@ void sbi_main(void)
 	 */
 	sbi_set_pmp(1, 0, -1UL, PMP_RWX);
 	//sbi_set_pmp(0, 0x80300000, 0x40000, PMP_R);//优先级高
+
+	printk("H extension %s\n", check_h_extension() ? "implemented" : "not implemented");
 
 	/* 设置跳转模式为S模式 */
 	val = read_csr(mstatus);

@@ -61,7 +61,7 @@ repeat:
 		goto repeat;
 	}
 
-	printk("%s: pick next thread (pid %d)\n", __func__, next->pid);
+	//printk("%s: pick next thread (pid %d)\n", __func__, next->pid);
 
 	return next;
 }

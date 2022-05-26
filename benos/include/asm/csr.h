@@ -15,6 +15,9 @@
 #define MSTATUS_MPIE	0x00000080UL
 
 /* Status register flags */
+#define SSTATUS_SPP_SHIFT	8
+#define SSTATUS_SPP	(1UL << SSTATUS_SPP_SHIFT)
+
 #define SR_SIE  0x2UL /* Supervisor Interrupt Enable */
 #define SR_SPIE 0x20UL /* Previous Supervisor IE */
 #define SR_SPP 0x100UL /* Previously Supervisor */
@@ -33,6 +36,39 @@
 #define SCAUSE_EC (0xf) /* 目前支持15个异常*/
 
 #define SATP_MODE_39 (1UL << 63)
+
+/* VS csr */
+#define CSR_VSSTATUS 0x200
+#define CSR_VSIE 0x204
+#define CSR_VSTVEC 0x205
+#define CSR_VSSCRATCH 0x240
+#define CSR_VSEPC 0x241
+#define CSR_VSCAUSE 0x242
+#define CSR_VSTVAL 0x243
+#define CSR_VSIP 0x244
+#define CSR_VSATP 0x280
+
+/* HS csr */
+#define CSR_HSTATUS 0x600
+#define HSTATUS_SPV_SHIFT	7
+#define HSTATUS_SPV	(1UL << HSTATUS_SPV_SHIFT)
+
+#define HSTATUS_SPVP_SHIFT	8
+#define HSTATUS_SPVP	(1UL << HSTATUS_SPVP_SHIFT)
+
+#define CSR_HEDELEG 0x602
+#define CSR_HIDELEG 0x603
+#define CSR_HIE 0x604
+#define CSR_HTIMEDELTA 0x605
+#define CSR_HTIMEDELTAH 0x615
+#define CSR_HCOUNTEREN 0x606
+#define CSR_HGEIE 0x607
+#define CSR_HTVAL 0x643
+#define CSR_HIP 0x644
+#define CSR_HVIP 0x645
+#define CSR_HTINST 0x64A
+#define CSR_HGATP 0x680
+#define CSR_HGEIP 0xE12
 
 /* Machine Memory Protection
  * 暂时支持8个pmpcfg

@@ -9,6 +9,7 @@
 #include "asm/syscall.h"
 #include "asm/trap.h"
 #include "asm/sbi.h"
+#include "mm.h"
 
 extern void do_exception_vector(void);
 
@@ -169,6 +170,11 @@ int do_exception(struct pt_regs *regs, unsigned long scause)
 			ret = vs_sbi_ecall_handle(ecall_id, regs);
 			msg = "virtual ecall handler failed";
 			break;
+		case CAUSE_LOAD_GUEST_PAGE_FAULT:
+		case CAUSE_FETCH_GUEST_PAGE_FAULT:
+		case CAUSE_STORE_GUEST_PAGE_FAULT:
+		       stage2_page_fault(regs);
+		       break;	
 		default:
 			inf = ec_to_fault_info(scause);
 			if (!inf->fn(regs, inf->name))

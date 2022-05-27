@@ -68,6 +68,8 @@
 #define CSR_HVIP 0x645
 #define CSR_HTINST 0x64A
 #define CSR_HGATP 0x680
+#define HGATP_MODE_Sv39x4 (8UL << 60)
+
 #define CSR_HGEIP 0xE12
 
 /* Machine Memory Protection

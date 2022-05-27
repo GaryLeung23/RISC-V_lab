@@ -126,7 +126,10 @@ void delegate_traps(void)
                          (1UL << CAUSE_BREAKPOINT) | (1UL << CAUSE_LOAD_PAGE_FAULT) |
                          (1UL << CAUSE_STORE_PAGE_FAULT) | (1UL << CAUSE_USER_ECALL) |
 			 (1UL << CAUSE_LOAD_ACCESS) | (1UL << CAUSE_STORE_ACCESS) |
-			 (1UL << CAUSE_ILLEGAL_INSTRUCTION) | (1UL << CAUSE_VIRTUAL_SUPERVISOR_ECALL);
+			 (1UL << CAUSE_ILLEGAL_INSTRUCTION) | (1UL << CAUSE_VIRTUAL_SUPERVISOR_ECALL) |
+			 /* 新增3个 Insturction、Load、Store guest-page fault*/
+			 (1UL <<CAUSE_LOAD_GUEST_PAGE_FAULT) | (1UL << CAUSE_STORE_GUEST_PAGE_FAULT) |
+			 (1UL << CAUSE_FETCH_GUEST_PAGE_FAULT);
 
 	 write_csr(mideleg, interrupts);
 	 write_csr(medeleg, exceptions);

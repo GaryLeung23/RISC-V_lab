@@ -1,17 +1,15 @@
 #include "asm/pgtable.h"
 #include "asm/memory.h"
-#include "mm.h"
+#include "vs_mm.h"
 #include "memset.h"
 #include "asm/memory.h"
-#include "asm/plic.h"
-#include "asm/uart.h"
 #include "printk.h"
-#include "asm/clint.h"
+#include "asm/csr.h"
+#include "asm/uart.h"
 
-extern char idmap_pg_dir[];
+/* vsatp 中的第一级页表一共需要4KB 并且要4KB对齐 */
+char vs_page_table_dir[PAGE_SIZE] __attribute__((aligned(PAGE_SIZE)));;
 
-extern char _text_boot[], _etext_boot[];
-extern char _text[], _etext[];
 /*
  * alloc_init_pte: 检查pmdp表项内容，如果为空，则分配PTE页表，并回填pmdp表项
  *					并且为需要用到的PTE页表项根据prot与PFN填写
@@ -98,20 +96,7 @@ static void alloc_init_pmd(pgd_t *pgdp, unsigned long addr,
 }
 
 /*
- * 分配一个page用于各级页表
- */
-unsigned long early_pgtable_alloc(void)
-{
-	unsigned long phys;
-
-	phys = get_free_page();
-	memset((void *)phys, 0, PAGE_SIZE);
-
-	return phys;
-}
-
-/*
- * __create_pgd_mapping: 创建页表
+ * __create_vs_pgd_mapping: 创建页表
  *
  * pgdir: PGD页表的基地址
  * phys: 物理地址PA
@@ -121,7 +106,7 @@ unsigned long early_pgtable_alloc(void)
  * alloc_pgtable: 分配各级页表的分配函数
  * flags: 标志位
  */
-void __create_pgd_mapping(pgd_t *pgdir, unsigned long phys,
+static void __create_vs_pgd_mapping(pgd_t *pgdir, unsigned long phys,
 		unsigned long virt, unsigned long size,
 		pgprot_t prot,
 		unsigned long (*alloc_pgtable)(void),
@@ -145,68 +130,59 @@ void __create_pgd_mapping(pgd_t *pgdir, unsigned long phys,
 	} while (pgdp++, addr = next, addr != end);
 }
 
-static void create_identical_mapping(void)
+/*
+ * 分配一个page用于各级页表
+ */
+static unsigned long early_pgtable_alloc(void)
 {
+	unsigned long phys;
+
+	phys = get_free_page();
+	memset((void *)phys, 0, PAGE_SIZE);
+
+	return phys;
+}
+
+/* 创建gva ->gpa 的stage 1的页表 如果gva不等于gpa就不是恒等映射*/
+void set_vs_mapping_page(unsigned long gva, unsigned long gpa)
+{
+	/* map vs page */
+	__create_vs_pgd_mapping((pgd_t *)vs_page_table_dir, gpa, gva,
+			PAGE_SIZE, PAGE_KERNEL,
+			early_pgtable_alloc,
+			0);
+	asm volatile ("sfence.vma \n\t");
+}
+
+extern char _text_boot[], _etext[], _end[];
+
+/* 建立stage1的地址映射关系 这里还是恒等映射*/
+void vs_paging_init(void)
+{
+	unsigned long val;
+
 	unsigned long start;
 	unsigned long end;
 
 	/*map text*/
 	start = (unsigned long)_text_boot;
 	end = (unsigned long)_etext;
-	__create_pgd_mapping((pgd_t *)idmap_pg_dir, start, start,
-			end - start, PAGE_KERNEL_READ_EXEC,
-			early_pgtable_alloc,
-			0);
+	__create_vs_pgd_mapping((pgd_t *)vs_page_table_dir, start, start,
+			end - start, PAGE_KERNEL_READ_EXEC,early_pgtable_alloc,0);
 
-	//printk("map text done\n");
-
-	/*map memory*/
-	start = PAGE_ALIGN((unsigned long)_etext);
+	/*map DDR*/
+	start = PAGE_ALIGN_UP((unsigned long)_etext);
 	end = DDR_END;
-	__create_pgd_mapping((pgd_t *)idmap_pg_dir, start, start,
-			end - start, PAGE_KERNEL,
-			early_pgtable_alloc,
-			0);
-	//printk("map memory done\n");
-}
+	__create_vs_pgd_mapping((pgd_t *)vs_page_table_dir, start, start,
+			end - start, PAGE_KERNEL, early_pgtable_alloc, 0);
 
-//create plic clint uart0 mapping
-static void create_mmio_mapping(void)
-{
-	unsigned long start;
-	unsigned long end;
-
-#ifdef CONFIG_BOARD_QEMU
-	/*map PLIC*/
-	start = PLIC_BASE;
-	end = PLIC_END;
-	__create_pgd_mapping((pgd_t *)idmap_pg_dir, start, start,
-			end - start, PAGE_KERNEL,
-			early_pgtable_alloc,
-			0);
-#endif
-
-	/*map CLINT*/
-	start = VIRT_CLINT_ADDR;
-	__create_pgd_mapping((pgd_t *)idmap_pg_dir, start, start,
-			VIRT_CLINT_SIZE, PAGE_KERNEL,
-			early_pgtable_alloc,
-			0);
-
-	/*map UART0*/
+	/*map UART*/
 	start = UART;
-	__create_pgd_mapping((pgd_t *)idmap_pg_dir, start, start,
-			UART_SIZE, PAGE_KERNEL,
-			early_pgtable_alloc,
-			0);
+	__create_vs_pgd_mapping((pgd_t *)vs_page_table_dir, start, start,
+			UART_SIZE, PAGE_KERNEL, early_pgtable_alloc, 0);
 
-}
-
-void paging_init(void)
-{
-	//memset(idmap_pg_dir, 0, PAGE_SIZE);
-	//create_identical_mapping();
-	create_mmio_mapping();
-
-	//enable_mmu_relocate();
+	/* 设置vsatp 开启stage 1 MMU */
+	val = (((unsigned long)vs_page_table_dir) >> PAGE_SHIFT) | SATP_MODE_39;
+	asm volatile ("sfence.vma \n\t");
+	write_csr(satp, val);
 }

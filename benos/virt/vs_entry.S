@@ -120,6 +120,14 @@ ret_from_exception:
 	kernel_exit
 	sret
 
+.global vs_enable_mmu_relocate
+vs_enable_mmu_relocate:
+	li a1, SATP_MODE_39
+	or a2, a2, a1
+	sfence.vma
+	csrw satp, a2
+	ret
+
 .global jump_to_vs_mode
 jump_to_vs_mode:
 	la t0, 1f

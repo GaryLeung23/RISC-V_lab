@@ -102,7 +102,7 @@ void do_vs_exception(struct pt_regs *regs, unsigned long scause)
 {
 	const struct fault_info *inf;
 
-	printk("%s, virtual supervisor handler scause:0x%lx\n", __func__, scause);
+	printk("%s, virtual supervisor handler scause: %lu\n", __func__, scause);
 
 	if (is_interrupt_fault(scause)) {
 
@@ -119,7 +119,7 @@ void vs_trap_init(void)
 	write_csr(sscratch, 0);
 	/* 设置异常向量表地址 */
 	write_csr(stvec, vs_exception_vector);
-	printk("vs_trap_init: stvec=0x%x, 0x%x\n", read_csr(stvec), vs_exception_vector);
+	//printk("vs_trap_init: stvec=0x%x, 0x%x\n", read_csr(stvec), vs_exception_vector);
 	/* 使能所有中断 */
 	write_csr(sie, -1);
 }

@@ -506,6 +506,7 @@ void move_thread2(void)
                printk("error move_to_user_space\n");
 }
 
+extern void vs_main(void);
 void vs_thread(void)
 {
 	vs_main();
@@ -519,12 +520,13 @@ void kernel_main(void)
 	clean_bss();
 
 	mem_init((unsigned long)_end, DDR_END);
-	// paging_init();
+	paging_init();
 	
 	uart_init();
 	//sbi ecall
 
 	printk("Welcome RISC-V!\r\n");
+	/* 再设置init_printk_done之前的printk都只是空操作 但是需要打印的东西在buffer中，设置后就会全部打印出来 */
 	init_printk_done(putchar);
 
 	printk("printk init done\n");
@@ -539,8 +541,6 @@ void kernel_main(void)
 	/* 初始化就绪队列 */
 	sched_init();
 	trap_init();
-
-
 
 #ifdef CONFIG_BOARD_QEMU
 	plic_init();

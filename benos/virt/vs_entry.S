@@ -1,5 +1,6 @@
 #include "asm/asm-offsets.h"
 #include "asm/csr.h"
+#include "asm/processor.h"
 
 .macro kernel_entry
 	addi sp, sp, -(PT_SIZE)
@@ -128,11 +129,31 @@ vs_enable_mmu_relocate:
 	csrw satp, a2
 	ret
 
+/*
+     unsigned long jump_to_vs_mode(unsigned long new_sp, unsigned long addr)
+     new_sp: 虚拟机的栈
+     addr: HS主机给虚拟机分配的内存
+
+     返回：addr，通过a0寄存器来返回，否则栈空间变换了，直接读取变量addr会读到错误值
+*/
 .global jump_to_vs_mode
 jump_to_vs_mode:
+	/*
+	   马上要跳到 虚拟机中
+	   1. 把HS模式的sp保存到 task_struct->kernel_sp中
+	   2. 把tp保存到HS模式的sscratch中，下次从虚拟机陷入时候，能找到tp
+	 */
+	sd sp, TASK_TI_KERNEL_SP(tp)
+	csrw sscratch, tp
 	la t0, 1f
 	/* 设置sret返回的地址 */
 	csrw sepc, t0
 	sret
+
+/* 从这以上到jump_to_vs_mode都是VMM的指令 */
+/* --------------------------------------------------------------------------------------------- */
+/* 虚拟机执行的第一条指令 */
 1:
+	mv sp, a0
+	mv a0, a1
 	ret

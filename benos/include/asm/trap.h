@@ -22,4 +22,23 @@
 #define CAUSE_VIRTUAL_INST_FAULT	0x16
 #define CAUSE_STORE_GUEST_PAGE_FAULT	0x17
 
+#define INTERRUPT_CAUSE_SOFTWARE    1
+#define INTERRUPT_CAUSE_TIMER       5
+#define INTERRUPT_CAUSE_EXTERNAL    9
+
+#define EXC_INST_MISALIGNED     0
+#define EXC_INST_ACCESS         1
+#define EXC_BREAKPOINT          3
+#define EXC_LOAD_ACCESS         5
+#define EXC_STORE_ACCESS        7
+#define EXC_SYSCALL             8
+#define EXC_INST_PAGE_FAULT     12
+#define EXC_LOAD_PAGE_FAULT     13
+#define EXC_STORE_PAGE_FAULT    15
+
+/* Virtual Interrupt causes */
+#define IRQ_VS_SOFT	2
+#define IRQ_VS_TIMER	6
+#define IRQ_VS_EXT	10
+
 #endif

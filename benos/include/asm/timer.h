@@ -7,5 +7,6 @@
 
 void handle_timer_irq(void);
 void timer_init(void);
+unsigned long get_cycles(void);
 
 #endif /* _ASM_TIMER_H*/

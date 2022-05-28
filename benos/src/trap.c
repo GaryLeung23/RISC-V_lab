@@ -10,6 +10,7 @@
 #include "asm/trap.h"
 #include "asm/sbi.h"
 #include "mm.h"
+#include "asm/sbi.h"
 
 extern void do_exception_vector(void);
 
@@ -109,7 +110,7 @@ static inline const struct fault_info *ec_to_fault_info(unsigned int scause)
 #define INTERRUPT_CAUSE_TIMER       5
 #define INTERRUPT_CAUSE_EXTERNAL    9
 
-
+/*vs模式中调用ecall陷入hs模式的handle函数*/
 static int vs_sbi_ecall_handle(unsigned int id, struct pt_regs *regs)
 {
 	int ret = 0;
@@ -118,7 +119,9 @@ static int vs_sbi_ecall_handle(unsigned int id, struct pt_regs *regs)
 	case SBI_EXIT_VM_TEST:
 		printk("%s: running in HS mode\n", __func__);
 		printk("hstatus 0x%lx\n", read_csr(CSR_HSTATUS));
-		ret = 0;
+		break;
+	case SBI_SET_TIMER:
+		riscv_vcpu_timer_event_start(regs->a0);
 		break;
 	}
 
@@ -136,6 +139,7 @@ int do_exception(struct pt_regs *regs, unsigned long scause)
 	const char *msg = "trap handler failed";
 	int ret = 0;
 
+	//printk("hstatus 0x%lx 0x%lx\n", read_csr(CSR_HSTATUS), regs->hstatus);
 	//printk("%s, scause:0x%lx, sstatus=0x%lx\n", __func__, scause, regs->sstatus);
 
 	if (is_interrupt_fault(scause)) {
@@ -193,6 +197,15 @@ int do_exception(struct pt_regs *regs, unsigned long scause)
 static void hs_delegate_traps(void)
 {
 	unsigned long exceptions;
+	
+	unsigned long interrupt;
+
+	/* 
+	 *默认情况下，所有的异常/中断都由M模式优先处理，
+	 *这里将VS模式下发生的那些已经委托给HS模式software、timer、Extenal Interrupt的再度委托给VS模式处理
+	 */
+	interrupt = (1UL << IRQ_VS_SOFT) | (1UL << IRQ_VS_TIMER) | (1UL << IRQ_VS_EXT);
+
 	/* 这里将一些异常 委托给VS模式处理   注意：ECALL from VS-Mode 是不能委托给VS模式处理的*/
 	exceptions = (1UL << CAUSE_MISALIGNED_FETCH) | (1UL << CAUSE_FETCH_PAGE_FAULT) |
                          (1UL << CAUSE_BREAKPOINT) | (1UL << CAUSE_LOAD_PAGE_FAULT) |
@@ -201,6 +214,10 @@ static void hs_delegate_traps(void)
 			 (1UL << CAUSE_ILLEGAL_INSTRUCTION);
 
 	write_csr(CSR_HEDELEG, exceptions);
+	write_csr(CSR_HIDELEG, interrupt);
+
+	/* 清除HVIP */
+	write_csr(CSR_HVIP, 0);
 }
 
 void trap_init(void)

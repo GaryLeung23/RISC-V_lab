@@ -4,14 +4,16 @@
 #include "asm/processor.h"
 
 .macro kernel_entry
-	/*  内核态陷入时sscratch为0:这时候将sp(内核栈)保存到进程内核栈的task_init中kernel_sp与user_sp,此时sp为内核栈
-	 *  用户态陷入时sscratch为tp(内核栈的最低地址):这时候将sp(用户栈)保存到进程内核栈的task_init中user_sp,并读出task_struc->kernel_sp,此时sp为内核栈
+	/*  内核态陷入时sscratch为0:这时候将sp(内核栈)保存到进程内核栈的task_struct中kernel_sp与user_sp,此时sp为内核栈
+	 *  用户态陷入时sscratch为tp(内核栈的最低地址):这时候将sp(用户栈)保存到进程内核栈的task_struct中user_sp,并读出task_struct->kernel_sp,此时sp为内核栈
 	 *  
 	 *  异常处理无论是内核线程还是用户线程都是使用内核栈的
 	 */
 	/* 同时执行 tp = sscratch;sscratch=tp,相当于互换
-	   如果从用户态陷入到内核，sscratch寄存器保存了指向task_struct的指针
-	   如果从内核态下陷入，那么tp寄存器一直指向task_struct(从结果来看是这样的)
+	   如果从用户态 或者从虚拟机  陷入到hypervisor，sscratch寄存器保存了指向task_struct的指针
+	   如果从hypervisor下陷入，那么tp寄存器一直指向task_struct(从结果来看是这样的)
+
+	   这里新增了从虚拟机 陷入的情况, 与从用户空间陷入情况类似
 	 */
 	csrrw tp, sscratch, tp
 	bnez tp, _save_user_sp
@@ -20,9 +22,9 @@ _save_kernel_sp:
 	csrr tp, sscratch
 	sd sp, TASK_TI_KERNEL_SP(tp)
 _save_user_sp:
-	/* 把用户态的sp保存到task_struc->user_sp*/
+	/* 把用户态的sp保存到task_struct->user_sp*/
 	sd sp, TASK_TI_USER_SP(tp)
-	/* 从task_struc->kernel_sp中加载正确的内核态sp*/
+	/* 从task_struct->kernel_sp中加载正确的内核态sp*/
 	ld sp, TASK_TI_KERNEL_SP(tp)
 
 	addi sp, sp, -(PT_SIZE)
@@ -73,6 +75,8 @@ _save_user_sp:
 	csrr s4, scause
 	/*保存ssratch  保存在ptregs->tp*/
 	csrr s5, sscratch
+	/*保存hstatus*/
+	csrr s7, CSR_HSTATUS
 
 	sd s6, PT_SP(sp)
 	sd s1, PT_SSTATUS(sp)
@@ -80,15 +84,18 @@ _save_user_sp:
 	sd s3, PT_SBADADDR(sp)
 	sd s4, PT_SCAUSE(sp)
 	sd s5, PT_TP(sp)
+	sd s7, PT_HSTATUS(sp)
 
 .endm
 
 .macro kernel_exit
 	ld a0, PT_SSTATUS(sp)
 	ld a2, PT_SEPC(sp)
+	ld a3, PT_HSTATUS(sp)
 
 	csrw sstatus, a0
 	csrw sepc, a2
+	csrw CSR_HSTATUS, a3
 
 	ld x1,  PT_RA(sp)
 	ld x3,  PT_GP(sp)
@@ -147,15 +154,29 @@ do_exception_vector:
 	tail do_exception
 
 ret_from_exception:
-	ld s1, PT_SSTATUS(sp)
+	ld s1, PT_HSTATUS(sp)
+	ld s2, PT_SSTATUS(sp)
 	/* 清sstatus的SIE,也就是关中断总开关,一般时候是不需要的，但是在schedule_tail中打开了中断,所以这里关闭中断 */
 	csrc sstatus, SR_SIE
-	/*判断是不是内核态触发的中断*/
-	andi s1, s1, SR_SPP
-	bnez s1, ret_to_kernel
+	/*
+	   判断是不是从 虚拟机 陷入到 内核的
+	   HSTATUS_SPV = 1; 从 虚拟机 陷入
+	   HSTATUS_SPV = 0; 不是从虚拟机陷入，可能是HS模式或者U模式
+	 */
+	andi s1, s1, HSTATUS_SPV
+	bnez s1, ret_to_user
+
+	/* 
+	   判断是不是从 内核态或者HS模式 陷入到 内核的
+	   SPP = 1, 从内核态陷入
+	   SPP = 0, 从用户态陷入
+	 */
+	
+	andi s2, s2, SR_SPP
+	bnez s2, ret_to_kernel
 
 /* 
-   返回用户空间
+   返回用户空间 或者虚拟机
  */
 ret_to_user:
 	/*判断是否要抢占当前进程*/

@@ -3,7 +3,7 @@
 
 /*struct pt_regs 数据结构中每个字段的偏移量*/
 
-#define PT_SIZE 288 /* sizeof(struct pt_regs) */
+#define PT_SIZE 296 /* sizeof(struct pt_regs) */
 #define PT_SEPC 0 /* offsetof(struct pt_regs, sepc) */
 #define PT_RA 8 /* offsetof(struct pt_regs, ra) */
 #define PT_FP 64 /* offsetof(struct pt_regs, s0) */
@@ -37,9 +37,10 @@
 #define PT_T5 240 /* offsetof(struct pt_regs, t5) */
 #define PT_T6 248 /* offsetof(struct pt_regs, t6) */
 #define PT_GP 24 /* offsetof(struct pt_regs, gp) */
-#define PT_ORIG_A0 280 /* offsetof(struct pt_regs, orig_a0) */
+#define PT_ORIG_A0 288 /* offsetof(struct pt_regs, orig_a0) */
 #define PT_SSTATUS 256 /* offsetof(struct pt_regs, sstatus) */
 #define PT_SBADADDR 264 /* offsetof(struct pt_regs, sbadaddr) */
 #define PT_SCAUSE 272 /* offsetof(struct pt_regs, scause) */
+#define PT_HSTATUS 280 /* offsetof(struct pt_regs, hstatus) */
 #endif
 

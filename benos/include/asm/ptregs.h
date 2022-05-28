@@ -9,7 +9,7 @@
  *    x1 ~ x31 通用寄存器
  *    CSRs
  *
- * 一共需要保存36个寄存器，共288个字节
+ * 一共需要保存37个寄存器，共296个字节
  */
 struct pt_regs {
 	/* 31个通用寄存器 + sepc */
@@ -49,6 +49,7 @@ struct pt_regs {
 	unsigned long sstatus;
 	unsigned long sbadaddr;
 	unsigned long scause;
+	unsigned long hstatus;
 	/* a0 value before the syscall */
 	unsigned long orig_a0;
 };

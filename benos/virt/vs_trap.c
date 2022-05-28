@@ -3,6 +3,7 @@
 #include "printk.h"
 #include "io.h"
 #include "type.h"
+#include "asm/trap.h"
 
 extern void vs_exception_vector(void);
 
@@ -102,9 +103,21 @@ void do_vs_exception(struct pt_regs *regs, unsigned long scause)
 {
 	const struct fault_info *inf;
 
-	printk("%s, virtual supervisor handler scause: %lu\n", __func__, scause);
+	//printk("%s, virtual supervisor handler scause: %lu\n", __func__, scause);
 
 	if (is_interrupt_fault(scause)) {
+		switch (scause &~ SCAUSE_INT) {
+		/* 
+		 * 当virtual supervisor timer interrupt (code 6)被委托到vs模式时,
+		 * 它自动转换为vs模式的supervisor timer interrupt( code 5); 
+		 */	
+		case INTERRUPT_CAUSE_TIMER:
+			vs_handle_timer_irq();
+			break;
+		default:
+			printk("vs unexpected interrupt cause");
+			panic();
+		}
 
 	} else {
 		inf = ec_to_fault_info(scause);

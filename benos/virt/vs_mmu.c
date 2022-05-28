@@ -6,6 +6,7 @@
 #include "printk.h"
 #include "asm/csr.h"
 #include "asm/uart.h"
+#include "asm/clint.h"
 
 /* vsatp 中的第一级页表一共需要4KB 并且要4KB对齐 */
 char vs_page_table_dir[PAGE_SIZE] __attribute__((aligned(PAGE_SIZE)));;
@@ -180,6 +181,12 @@ void vs_paging_init(void)
 	start = UART;
 	__create_vs_pgd_mapping((pgd_t *)vs_page_table_dir, start, start,
 			UART_SIZE, PAGE_KERNEL, early_pgtable_alloc, 0);
+
+	
+	/* map CLINT */
+	start = VIRT_CLINT_ADDR;
+	__create_vs_pgd_mapping((pgd_t *)vs_page_table_dir, start, start,
+			VIRT_CLINT_SIZE, PAGE_KERNEL, early_pgtable_alloc, 0);
 
 	/* 设置vsatp 开启stage 1 MMU */
 	val = (((unsigned long)vs_page_table_dir) >> PAGE_SHIFT) | SATP_MODE_39;

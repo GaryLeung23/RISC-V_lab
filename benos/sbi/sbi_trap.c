@@ -119,8 +119,9 @@ void delegate_traps(void)
 	unsigned long interrupts;
 	unsigned long exceptions;
 
-	/* 因为在benos中还在使用sbi的 ecall,所以不能有CAUSE_SUPERVISOR_ECALL*/
+	/* 因为在S/HS模式中还在使用sbi的 ecall,所以不能有CAUSE_SUPERVISOR_ECALL*/
 	/* 这里一定要将CAUSE_USER_ECALL CAUSE_VIRTUAL_SUPERVISOR_ECALL 那么是委托给HS模式处理 */
+	/* vs级中断和guest external 中断总是从m模式委派到hs模式。 所以不需要设置到mideleg*/
 	interrupts = MIP_SSIP | MIP_STIP | MIP_SEIP;
 	exceptions = (1UL << CAUSE_MISALIGNED_FETCH) | (1UL << CAUSE_FETCH_PAGE_FAULT) |
                          (1UL << CAUSE_BREAKPOINT) | (1UL << CAUSE_LOAD_PAGE_FAULT) |

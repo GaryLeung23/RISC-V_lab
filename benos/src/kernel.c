@@ -1,6 +1,7 @@
 #include "uart.h"
 #include "type.h"
 #include "memset.h"
+#include "printk.h"
 
 extern void load_store_test(void);
 extern void pc_related_test(void);
@@ -25,23 +26,23 @@ void asm_test(void)
 
 	val1 = compare_and_return(10, 9);
        if (val1 == 0)
-               uart_send_string("compare_and_return ok\n");
+               printk("compare_and_return ok\n");
        else 
-               uart_send_string("compare_and_return fail\n");
+               printk("compare_and_return fail\n");
 
        val2 = compare_and_return(9, 10);
        if (val2 == 0xffffffffffffffff)
-               uart_send_string("compare_and_return ok\n");
+               printk("compare_and_return ok\n");
        else
-	       uart_send_string("compare_and_return fail\n");
+	       printk("compare_and_return fail\n");
 
        val1 = sel_test(0, 9);
        if (val1 == 11)
-	       uart_send_string("sel test ok\n");
+	       printk("sel test ok\n");
 
        val2 = sel_test(5, 2);
        if (val2 == 1)
-	       uart_send_string("sel test ok\n");
+	       printk("sel test ok\n");
 
        my_memcpy_test();
        memset((void *)0x80210005, 0x55, 40);
@@ -51,13 +52,15 @@ void asm_test(void)
        memset((void *)0x80220005, 0x55, 80);
 
        branch_test();
-       uart_send_string("branch test done\n");
+       printk("branch test done\n");
 }
 
 void kernel_main(void)
 {
-    uart_init();
-    uart_send_string("Welcome RISC-V!\r\n");
+	uart_init();
+	uart_send_string("Welcome RISC-V!\r\n");
+	init_printk_done();
+	printk("printk init done\n");
 
     asm_test();
 

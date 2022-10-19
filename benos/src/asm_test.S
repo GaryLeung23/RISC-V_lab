@@ -100,3 +100,14 @@ compare_and_return:
 .L3:
 	mv	a0,a5
 	ret
+
+.global sel_test
+sel_test:
+	beqz a0, .L4
+	addi a5, a1, -1
+	j .L5
+.L4:
+	addi a5, a1, 2
+.L5:
+	mv a0, a5
+	ret

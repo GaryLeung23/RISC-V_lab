@@ -8,6 +8,7 @@ extern void compare_test(void);
 
 extern unsigned long compare_and_return(unsigned long a, unsigned long b);
 extern unsigned long sel_test(unsigned long a, unsigned long b);
+extern void my_memcpy_test(void);
 
 void asm_test(void)
 {
@@ -38,6 +39,8 @@ void asm_test(void)
        val2 = sel_test(5, 2);
        if (val2 == 1)
 	       uart_send_string("sel test ok\n");
+
+       my_memcpy_test();
 }
 
 void kernel_main(void)

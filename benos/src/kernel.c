@@ -3,12 +3,14 @@
 extern void load_store_test(void);
 extern void pc_related_test(void);
 extern void shift_test(void);
+extern void add_sub_test(void);
 
 void asm_test(void)
 {
 	load_store_test();
 	pc_related_test();
 	shift_test();
+	add_sub_test();
 }
 
 void kernel_main(void)

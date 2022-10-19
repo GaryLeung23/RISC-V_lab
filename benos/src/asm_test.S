@@ -89,3 +89,14 @@ compare_test:
 	sltiu a1,t0,-200
 	sltiu a1,t0,200
 	ret
+
+.global compare_and_return
+compare_and_return:
+	bltu	a0,a1,.L2
+	li	a5,0
+	j	.L3
+.L2:
+	li	a5,-1
+.L3:
+	mv	a0,a5
+	ret

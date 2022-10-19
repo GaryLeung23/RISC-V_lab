@@ -2,11 +2,13 @@
 
 extern void load_store_test(void);
 extern void pc_related_test(void);
+extern void shift_test(void);
 
 void asm_test(void)
 {
 	load_store_test();
 	pc_related_test();
+	shift_test();
 }
 
 void kernel_main(void)

@@ -1,4 +1,6 @@
 #include "uart.h"
+#include "type.h"
+#include "memset.h"
 
 extern void load_store_test(void);
 extern void pc_related_test(void);
@@ -41,6 +43,11 @@ void asm_test(void)
 	       uart_send_string("sel test ok\n");
 
        my_memcpy_test();
+       memset((void *)0x80210005, 0x55, 40);
+	   memset((void *)0x80210045, 0x55, 18);
+	   memset((void *)0x80210085, 0x55, 16+11);
+	   memset((void *)0x802100c5, 0x55, 8);
+	   memset((void *)0x80220005, 0x55, 80);
 }
 
 void kernel_main(void)

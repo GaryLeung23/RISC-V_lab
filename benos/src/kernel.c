@@ -11,6 +11,7 @@ extern void compare_test(void);
 extern unsigned long compare_and_return(unsigned long a, unsigned long b);
 extern unsigned long sel_test(unsigned long a, unsigned long b);
 extern void my_memcpy_test(void);
+extern void branch_test(void);
 
 void asm_test(void)
 {
@@ -44,10 +45,13 @@ void asm_test(void)
 
        my_memcpy_test();
        memset((void *)0x80210005, 0x55, 40);
-	   memset((void *)0x80210045, 0x55, 18);
-	   memset((void *)0x80210085, 0x55, 16+11);
-	   memset((void *)0x802100c5, 0x55, 8);
-	   memset((void *)0x80220005, 0x55, 80);
+       memset((void *)0x80210045, 0x55, 18);
+       memset((void *)0x80210085, 0x55, 16+11);
+       memset((void *)0x802100c5, 0x55, 8);
+       memset((void *)0x80220005, 0x55, 80);
+
+       branch_test();
+       uart_send_string("branch test done\n");
 }
 
 void kernel_main(void)

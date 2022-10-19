@@ -126,3 +126,26 @@ my_memcpy_test:
 	blt t0, t2, .loop
 
 	ret
+
+.globl add_test
+add_test:
+	add a0, a0, a1
+	nop
+	ret
+
+.globl branch_test
+branch_test:
+	/*把返回地址ra寄存器保存到栈里*/
+	addi	sp,sp,-8
+	sd	ra,(sp)
+
+	li a0, 1
+	li a1, 2
+	/* 调用add_test子函数 */
+	call add_test
+	nop
+
+	/* 从栈中恢复ra返回地址*/
+	ld	ra,(sp)
+	addi	sp,sp,8
+	ret

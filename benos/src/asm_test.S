@@ -33,3 +33,20 @@ pc_related_test:
 	addi t0, t0, MY_OFFSET
 	ld t1, MY_OFFSET(t0)
 	ret
+
+.global shift_test
+shift_test:
+	li t0, 0x8000008a00000000
+	srai a1, t0, 1
+	srli t1, t0, 1
+
+	li t0, 0x128000008a
+	sraiw a2, t0, 1
+	srliw t1, t0, 1
+	slliw a3, t0, 1
+
+	li t0, 0x124000008a
+	sraiw a2, t0, 1
+	srliw t1, t0, 1
+	slliw a4, t0, 1
+	ret

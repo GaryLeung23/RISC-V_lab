@@ -3,6 +3,9 @@
 my_test_data:
 	.dword 0x12345678abcdabcd
 
+#define MY_OFFSET -2048
+
+.align 3
 .global load_store_test
 load_store_test:
 	li t0, 0x80200000
@@ -22,4 +25,11 @@ load_store_test:
 	ld t2, my_test_data
 	lla t1, my_test_data
 
+	ret
+
+.global pc_related_test
+pc_related_test:
+	auipc t0, 1
+	addi t0, t0, MY_OFFSET
+	ld t1, MY_OFFSET(t0)
 	ret

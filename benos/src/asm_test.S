@@ -50,3 +50,26 @@ shift_test:
 	srliw t1, t0, 1
 	slliw a4, t0, 1
 	ret
+
+.global add_sub_test
+add_sub_test:
+	/* 这是一条错误指令*/
+	//addi a1, t0, 0x800
+	addi a1, t0, 0xfffffffffffff800
+
+	li t0, 0x140200000
+	li t1, 0x40000000
+
+	addi a1, t0, 0x700
+	addi a1, t0, 0xfffffffffffff800
+	addiw a2, t0, 0x80
+
+	add a3, t0, t1
+	addw a4, t0, t1
+
+	li t0, 0x180200000
+	li t1, 0x200000
+	
+	sub a0, t0, t1
+	subw a1, t0, t1
+	ret

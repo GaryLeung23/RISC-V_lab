@@ -7,6 +7,7 @@ extern void add_sub_test(void);
 extern void compare_test(void);
 
 extern unsigned long compare_and_return(unsigned long a, unsigned long b);
+extern unsigned long sel_test(unsigned long a, unsigned long b);
 
 void asm_test(void)
 {
@@ -30,6 +31,13 @@ void asm_test(void)
        else
 	       uart_send_string("compare_and_return fail\n");
 
+       val1 = sel_test(0, 9);
+       if (val1 == 11)
+	       uart_send_string("sel test ok\n");
+
+       val2 = sel_test(5, 2);
+       if (val2 == 1)
+	       uart_send_string("sel test ok\n");
 }
 
 void kernel_main(void)

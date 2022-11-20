@@ -46,6 +46,8 @@ void asm_test(void)
 
        branch_test();
        printk("branch test done\n");
+       
+       dump_stack();
 }
 
 void kernel_main(void)

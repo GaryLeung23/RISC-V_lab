@@ -44,6 +44,18 @@ SECTIONS
 	_edata = .;
 
 	/*
+        * 数据段 sdata
+        */
+	_sdata = .;
+	. = ALIGN(4096);
+	.sdata : {
+		__global_pointer$ = . + 0x800;
+		*(.sdata)
+		*(.sbss*)
+	}
+	_esdata = .;
+
+	/*
         * bss段
         *
         * ALIGN(8)表示8个字节对齐

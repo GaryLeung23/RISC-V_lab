@@ -109,6 +109,8 @@ extern char _text[], _etext[];
 extern char _rodata[], _erodata[];
 extern char _data[], _edata[];
 extern char _bss[], _ebss[];
+extern char _sdata[], _esdata[];
+extern char __global_pointer$[];
 
 static void print_mem(void)
 {
@@ -128,6 +130,10 @@ static void print_mem(void)
 	printk("        .bss: 0x%08lx - 0x%08lx (%6ld B)\n",
 			(unsigned long)_bss, (unsigned long)_ebss,
 			(unsigned long)(_ebss - _bss));
+	printk("      .sdata: 0x%08lx - 0x%08lx (%6ld B)\n",
+			(unsigned long)_sdata, (unsigned long)_esdata,
+			(unsigned long)(_esdata - _sdata));
+	printk("      __global_pointer$:  0x%08lx\n",(unsigned long)__global_pointer$);
 }
 
 static void clean_bss(void)
@@ -137,6 +143,13 @@ static void clean_bss(void)
 	unsigned size = end - start;
 
 	memset((void *)start, 0, size);
+}
+
+long a = 5;
+long b = 10;
+
+long data(void) {
+  return a | b;
 }
 
 void kernel_main(void)
@@ -155,6 +168,7 @@ void kernel_main(void)
 	print_func_name(0x800800);
 
 	print_mem();
+	data();
 
 	while (1) {
 		;

@@ -13,6 +13,11 @@ _start:
 	li t0, 4096
 	add sp, sp, t0
 
+.option push
+.option norelax
+	la gp, __global_pointer$
+.option pop
+
 	/* 跳转到C语言 */
 	tail kernel_main
 

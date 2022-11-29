@@ -53,5 +53,12 @@ SECTIONS
 	_bss = .;
 	.bss : { *(.bss*) } 
 	_ebss = .;
+
+		/*
+	 * 设置一个.fix段，让它离text段的offset大于1MB，从而构造一个超过21位地址范围的跳转
+	 */
+	. = 0x80400000,
+  	.fix : { *(.fix) }
+
 }
 

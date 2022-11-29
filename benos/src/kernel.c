@@ -139,14 +139,6 @@ static void clean_bss(void)
 	memset((void *)start, 0, size);
 }
 
-/*
- * 让foo()函数链接到.fix段，让它离text段的offset大于1MB，从而构造一个超过21位地址范围的跳转
- */
-extern void foo(void) __attribute__(( section( ".fix")));
-void foo(void)
-{
-}
-
 void kernel_main(void)
 {
 	clean_bss();
@@ -163,8 +155,6 @@ void kernel_main(void)
 	print_func_name(0x800800);
 
 	print_mem();
-
-	foo();
 
 	while (1) {
 		;

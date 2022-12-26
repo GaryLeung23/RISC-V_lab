@@ -1,7 +1,20 @@
 #include "asm/csr.h"
 #include "sbi_lib.h"
+//#include "asm/sbi.h"
+#include "uart.h"
+#include "sbi_trap_regs.h"
+#include "sbi_trap.h"
+#include "printk.h"
 
 #define FW_JUMP_ADDR 0x80200000
+
+#define BANNER \
+"	                                            ___   ___\n"\
+"    //   ) )                    //   ) )  //   ) )    / /\n" \
+"   //___/ /   ___       __     ((        //___/ /    / /\n"\
+"  / __  (   //___) ) //   ) )    \\      / __  (     / /\n"\
+" //    ) ) //       //   / /       ) ) //    ) )   / /\n" \
+"//____/ / ((____   //   / / ((___ / / //____/ / __/ /___\n"
 
 /*
  * sbi_set_pmp: 设置PMP Region
@@ -27,7 +40,7 @@ int sbi_set_pmp(int reg_idx, unsigned long start, unsigned long size, unsigned l
 	if (order < PMP_SHIFT)
 		return -1;
 
-	// printk("%s: start: 0x%lx order %d prot 0x%lx\n", __func__, start, order, prot);
+	printk("%s: start: 0x%lx order %d prot 0x%lx\n", __func__, start, order, prot);
 
 	pmpaddr = start >> PMP_SHIFT;
 
@@ -67,8 +80,8 @@ int sbi_set_pmp(int reg_idx, unsigned long start, unsigned long size, unsigned l
 		}
 	}
 
-	// printk("%s: pmpaddr: 0x%lx  pmpcfg 0x%lx, cfg_csr 0x%x addr_csr 0x%x\n",
-			// __func__, pmpaddr, pmpcfg, pmpcfg_csr, pmpaddr_csr);
+	printk("%s: pmpaddr: 0x%lx  pmpcfg 0x%lx, cfg_csr 0x%x addr_csr 0x%x\n",
+			__func__, pmpaddr, pmpcfg, pmpcfg_csr, pmpaddr_csr);
 
 	/* 写CSR寄存器 */
 	write_csr_num(pmpaddr_csr, pmpaddr);
@@ -84,6 +97,12 @@ void sbi_main(void)
 {
 	unsigned long val;
 
+	uart_init();
+
+	init_printk_done(putchar);
+	printk(BANNER);
+
+	sbi_trap_init();
 	/*
 	 * 配置PMP
 	 * 所有地址空间都可以访问

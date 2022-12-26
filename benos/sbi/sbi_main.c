@@ -1,6 +1,19 @@
 #include "asm/csr.h"
+//#include "asm/sbi.h"
+#include "uart.h"
+#include "sbi_trap_regs.h"
+#include "sbi_trap.h"
+#include "printk.h"
 
 #define FW_JUMP_ADDR 0x80200000
+
+#define BANNER \
+"	                                            ___   ___\n"\
+"    //   ) )                    //   ) )  //   ) )    / /\n" \
+"   //___/ /   ___       __     ((        //___/ /    / /\n"\
+"  / __  (   //___) ) //   ) )    \\      / __  (     / /\n"\
+" //    ) ) //       //   / /       ) ) //    ) )   / /\n" \
+"//____/ / ((____   //   / / ((___ / / //____/ / __/ /___\n"
 
 /*
  * 运行在M模式
@@ -8,6 +21,13 @@
 void sbi_main(void)
 {
 	unsigned long val;
+
+	uart_init();
+
+	init_printk_done(putchar);
+	printk(BANNER);
+
+	sbi_trap_init();
 
 	/* 设置跳转模式为S模式 */
 	val = read_csr(mstatus);

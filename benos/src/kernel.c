@@ -3,6 +3,7 @@
 #include "memset.h"
 #include "printk.h"
 #include "io.h"
+#include "asm/sbi.h"
 
 extern void load_store_test(void);
 extern void pc_related_test(void);
@@ -288,8 +289,10 @@ void kernel_main(void)
 {
 	clean_bss();
 	uart_init();
-	uart_send_string("Welcome RISC-V!\r\n");
-	init_printk_done();
+	//sbi ecall
+	sbi_put_string("Welcome RISC-V!\r\n");
+	init_printk_done(sbi_putchar);
+
 	printk("printk init done\n");
 
 	asm_test();

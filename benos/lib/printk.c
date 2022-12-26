@@ -1,6 +1,6 @@
 #include <stdarg.h>
-#include "../include/uart.h"
 #include "string.h"
+#include "asm/sbi.h"
 
 #define CONSOLE_PRINT_BUFFER_SIZE 1024
 static char print_buf[CONSOLE_PRINT_BUFFER_SIZE];
@@ -336,14 +336,18 @@ repeat:
 	return pos - string;
 }
 
-void init_printk_done(void)
+static void (*putchar_fn)(char c);
+
+void init_printk_done(void (*fn)(char c))
 {
 	unsigned long i;
+
+	putchar_fn = fn;
 
 	g_printk_status = PRINTK_STATUS_READY;
 
 	for (i = 0; i < g_record_len; i++)
-		putchar(log_buf[i]);
+		putchar_fn(log_buf[i]);
 
 	g_record = log_buf;
 	g_record_len = 0;
@@ -369,7 +373,7 @@ int printk(const char *fmt, ...)
 	}
 
 	for (i = 0; i < len; i++) {
-		putchar(print_buf[i]);
+		putchar_fn(print_buf[i]);
 		if (i > sizeof(print_buf))
 			break;
 	}

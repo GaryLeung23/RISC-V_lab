@@ -1,10 +1,17 @@
+#include "asm/ptregs.h"
 #include "printk.h"
 #include "type.h"
 
 struct stackframe {
-	unsigned long s_fp;
-	unsigned long s_ra;
+	unsigned long fp;
+	unsigned long ra;
 };
+
+static bool print_trace_address(unsigned long pc, void *arg)
+{
+	print_symbol(pc);
+	return false;
+}
 
 extern char _text[], _etext[];
 static int kernel_text(unsigned long addr)
@@ -16,22 +23,29 @@ static int kernel_text(unsigned long addr)
 	return 0;
 }
 
-static void walk_stackframe(void )
+static void walk_stackframe(struct pt_regs *regs, bool (*fn)(unsigned long, void *),
+		void *arg)
 {
-	unsigned long sp, fp, pc;
+	unsigned long sp, pc, fp;
 	struct stackframe *frame;
 	unsigned long low;
 
-	const register unsigned long current_sp __asm__ ("sp");
-	sp = current_sp;
-	pc = (unsigned long)walk_stackframe;
-	/*
-	 * 获取当前栈帧的fp
-	 */
-	fp = (unsigned long)__builtin_frame_address(0);
+	if (regs) {
+		pc = regs->sepc;
+		sp = regs->sp;
+		fp = regs->s0;
+	} else {
+		const register unsigned long current_sp __asm__ ("sp");
+		sp = current_sp;
+		pc = (unsigned long)walk_stackframe;
+		/*
+	 	 * 获取当前栈帧的fp
+	 	 */
+		fp = (unsigned long)__builtin_frame_address(0);
+	}
 
 	while (1) {
-		if (!kernel_text(pc))
+		if (!kernel_text(pc) || (fn)(pc, arg))
 			break;
 
 		/* 检查fp是否有效 */
@@ -48,21 +62,24 @@ static void walk_stackframe(void )
 		if (kernel_text(pc))
 			printk("[0x%016lx - 0x%016lx]  pc 0x%016lx\n", sp, fp, pc);
 		/*
-		 * fp 指向上一级函数的栈底
+		 * fp 指向上一级函数的栈底SP_p
 		 * 减去16个字节，正好是struct stackframe
 		 */
 		frame = (struct stackframe *)(fp - 16);
 		sp = fp;
-		fp = frame->s_fp;
+		fp = frame->fp;
 
-		pc = frame->s_ra - 4;
-
-
+		pc = frame->ra - 0x4;
 	}
 }
 
-void dump_stack(void)
+void show_stack(struct pt_regs *regs)
 {
-	printk("Call Frame:\n");
-	walk_stackframe();
+	printk("Call Trace:\n");
+	walk_stackframe(regs, print_trace_address, NULL);
+}
+
+void dump_stack(struct pt_regs *regs)
+{
+	show_stack(regs);
 }

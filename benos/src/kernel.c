@@ -289,6 +289,20 @@ long data(void) {
   return a | b;
 }
 
+/* 通过篡改代码段里的指令代码触发一个非法指令访问异常。*/
+static void create_illegal_intr(void)
+{
+	int *p = (int *)trigger_load_access_fault;
+
+	*p = 0xbadbeef;
+}
+
+/* 在S模式下访问M模式下的寄存器来触发一个非法指令访问异常 */
+static void access_m_reg(void)
+{
+	read_csr(mstatus);
+}
+
 void kernel_main(void)
 {
 	clean_bss();
@@ -312,7 +326,9 @@ void kernel_main(void)
 	print_mem();
 	data();
 
-	//trigger_load_access_fault();
+	//access_m_reg();
+	create_illegal_intr();
+	trigger_load_access_fault();
 
 	while (1) {
 		char c = sbi_getchar();

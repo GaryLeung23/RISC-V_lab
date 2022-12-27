@@ -104,7 +104,8 @@ void delegate_traps(void)
 	exceptions = (1UL << CAUSE_MISALIGNED_FETCH) | (1UL << CAUSE_FETCH_PAGE_FAULT) |
                          (1UL << CAUSE_BREAKPOINT) | (1UL << CAUSE_LOAD_PAGE_FAULT) |
                          (1UL << CAUSE_STORE_PAGE_FAULT) | (1UL << CAUSE_USER_ECALL) |
-			 (1UL << CAUSE_LOAD_ACCESS) | (1UL << CAUSE_STORE_ACCESS);
+			 (1UL << CAUSE_LOAD_ACCESS) | (1UL << CAUSE_STORE_ACCESS) |
+			 (1UL << CAUSE_ILLEGAL_INSTRUCTION);
 
 	 write_csr(mideleg, interrupts);
 	 write_csr(medeleg, exceptions);

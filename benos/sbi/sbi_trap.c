@@ -77,6 +77,10 @@ void sbi_trap_handler(struct sbi_trap_regs *regs)
 		rc = sbi_ecall_handle(ecall_id, regs);
 		msg = "ecall handler failed";
 		break;
+	case CAUSE_LOAD_ACCESS:
+	case CAUSE_STORE_ACCESS:
+		msg = "load store access failed";
+		break;
 	default:
 		break;
 	}
@@ -84,6 +88,22 @@ void sbi_trap_handler(struct sbi_trap_regs *regs)
 	if (rc) {
 		sbi_trap_error(regs, msg, rc);
 	}
+}
+
+void delegate_traps(void)
+{
+	unsigned long interrupts;
+	unsigned long exceptions;
+
+	/* 因为在benos中还在使用sbi的 ecall,所以不能有CAUSE_SUPERVISOR_ECALL*/
+	interrupts = MIP_SSIP | MIP_STIP | MIP_SEIP;
+	exceptions = (1UL << CAUSE_MISALIGNED_FETCH) | (1UL << CAUSE_FETCH_PAGE_FAULT) |
+                         (1UL << CAUSE_BREAKPOINT) | (1UL << CAUSE_LOAD_PAGE_FAULT) |
+                         (1UL << CAUSE_STORE_PAGE_FAULT) | (1UL << CAUSE_USER_ECALL) |
+			 (1UL << CAUSE_LOAD_ACCESS) | (1UL << CAUSE_STORE_ACCESS);
+
+	 write_csr(mideleg, interrupts);
+	 write_csr(medeleg, exceptions);
 }
 
 extern void sbi_exception_vector(void);

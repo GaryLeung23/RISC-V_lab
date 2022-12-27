@@ -116,9 +116,11 @@ void sbi_main(void)
 	val = INSERT_FIELD(val, MSTATUS_MPIE, 0);
 	write_csr(mstatus, val);
 
+	delegate_traps();
+
 	/* 设置M模式的Exception Program Counter，用于mret跳转 */
 	write_csr(mepc, FW_JUMP_ADDR);
-	/* 设置S模式异常向量表入口*/
+	/* 设置S模式异常向量表入口  后面会在benos中重新赋值,在这里是无效代码？*/
 	write_csr(stvec, FW_JUMP_ADDR);
 	/* 关闭S模式的中断*/
 	write_csr(sie, 0);

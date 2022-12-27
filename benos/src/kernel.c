@@ -4,6 +4,10 @@
 #include "printk.h"
 #include "io.h"
 #include "asm/sbi.h"
+#include "asm/csr.h"
+
+extern void trap_init(void);
+extern void trigger_load_access_fault();
 
 extern void load_store_test(void);
 extern void pc_related_test(void);
@@ -295,6 +299,8 @@ void kernel_main(void)
 
 	printk("printk init done\n");
 
+	trap_init();
+
 	asm_test();
 	inline_asm_test();
 
@@ -305,6 +311,8 @@ void kernel_main(void)
 
 	print_mem();
 	data();
+
+	trigger_load_access_fault();
 
 	while (1) {
 		;

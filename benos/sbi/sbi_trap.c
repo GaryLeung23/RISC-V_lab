@@ -56,6 +56,10 @@ static int sbi_ecall_handle(unsigned int id, struct sbi_trap_regs *regs)
 		putchar(regs->a0);
 		ret = 0;
 		break;
+	case SBI_CONSOLE_GETCHAR:
+		regs->a0 = uart_get();
+		ret = 0;
+		break;
 	}
 
 	/* 系统调用返回的是系统调用指令（例如ECALL指令）的下一条指令 */

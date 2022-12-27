@@ -45,4 +45,10 @@ static inline void sbi_put_string(char *str)
 	for (i = 0; str[i] != '\0'; i++)
 		sbi_putchar((char) str[i]);
 }
+
+static inline char sbi_getchar(void)
+{
+	return SBI_CALL_1(SBI_CONSOLE_GETCHAR, 0);
+}
+
 #endif /*_ASM_RISCV_SBI_H*/

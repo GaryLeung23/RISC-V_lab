@@ -1,6 +1,14 @@
 #include "asm/uart.h"
 #include "io.h"
 
+char uart_get(void)
+{
+	if (readb(UART_LSR) & UART_LSR_DR)
+		return readb(UART_DAT);
+	else
+		return -1;
+}
+
 void uart_send(char c)
 {
 	while((readb(UART_LSR) & UART_LSR_EMPTY) == 0)

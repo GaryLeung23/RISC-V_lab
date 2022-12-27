@@ -312,9 +312,11 @@ void kernel_main(void)
 	print_mem();
 	data();
 
-	trigger_load_access_fault();
+	//trigger_load_access_fault();
 
 	while (1) {
-		;
+		char c = sbi_getchar();
+		if (c == '\r')
+			printk("enter has pressed\n");
 	}
 }

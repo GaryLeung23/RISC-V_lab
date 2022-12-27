@@ -17,6 +17,7 @@ SECTIONS
         * text代码段
         */
 	. = ALIGN(8);
+	_stext = .;
 	_text = .;
 	.text :
        {

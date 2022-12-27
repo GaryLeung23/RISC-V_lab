@@ -30,7 +30,7 @@ else
 endif
 
 clean :
-	rm -rf $(BUILD_ROOT)  *.bin  *.map *.elf
+	rm -rf $(BUILD_ROOT)  *.bin  *.map *.elf .tmp* scripts/kallsyms/kallsyms
 
 $(BUILD_DIR)/%_c.o: $(SRC_DIR)/%.c
 	$(CMD_PREFIX)mkdir -p $(BUILD_DIR); echo " CC   $@" ; $(GNU)-gcc $(COPS) -c $< -o $@
@@ -52,8 +52,17 @@ OBJ_FILES += $(LIB_FILES:$(LIB_DIR)/%.c=$(BUILD_LIB_DIR)/%_c.o)
 DEP_FILES = $(OBJ_FILES:%.o=%.d)
 -include $(DEP_FILES)
 
+# The finally linked kernel.
 benos.bin: $(SRC_DIR)/linker.ld $(OBJ_FILES)
-	$(CMD_PREFIX)$(GNU)-ld -T $(SRC_DIR)/linker.ld -o $(BUILD_DIR)/benos.elf  $(OBJ_FILES) -Map benos.map; echo " LD $(BUILD_DIR)/benos.elf"
+	$(CMD_PREFIX)gcc scripts/kallsyms/kallsyms.c -o scripts/kallsyms/kallsyms; echo " CC kallsyms"
+	$(CMD_PREFIX)$(GNU)-ld -T $(SRC_DIR)/linker.ld -o .tmp_vmbenos1 $(OBJ_FILES); echo " LD .tmp_vmbenos1"
+	$(CMD_PREFIX)$(GNU)-nm .tmp_vmbenos1 | scripts/kallsyms/kallsyms > .tmp_kallsyms1.S ; echo " NM .tmp_kallsyms1.S"
+	$(CMD_PREFIX)$(GNU)-gcc $(COPS) -c -o .tmp_kallsyms1.o .tmp_kallsyms1.S; echo " CC .tmp_kallsyms1.o" 
+	$(CMD_PREFIX)$(GNU)-ld -T $(SRC_DIR)/linker.ld -o .tmp_vmbenos2 $(OBJ_FILES) .tmp_kallsyms1.o; echo " LD .tmp_vmbenos2"
+	$(CMD_PREFIX)$(GNU)-nm .tmp_vmbenos2 | scripts/kallsyms/kallsyms > .tmp_kallsyms2.S; echo " NM .tmp_kallsyms2.S"
+	$(CMD_PREFIX)$(GNU)-gcc $(COPS) -c -o .tmp_kallsyms2.o .tmp_kallsyms2.S; echo " CC .tmp_kallsyms2.o"
+
+	$(CMD_PREFIX)$(GNU)-ld -T $(SRC_DIR)/linker.ld -o $(BUILD_DIR)/benos.elf  $(OBJ_FILES) .tmp_kallsyms2.o -Map benos.map; echo " LD $(BUILD_DIR)/benos.elf"
 	$(CMD_PREFIX)$(GNU)-objcopy $(BUILD_DIR)/benos.elf -O binary benos.bin; echo " OBJCOPY benos.bin"
 	$(CMD_PREFIX)cp $(BUILD_DIR)/benos.elf benos.elf
 

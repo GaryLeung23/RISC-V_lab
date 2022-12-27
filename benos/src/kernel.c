@@ -230,7 +230,7 @@ void asm_test(void)
        branch_test();
        printk("branch test done\n");
        
-       dump_stack();
+       //dump_stack();
        
        val1 = macro_test_1(5, 5);
        if (val1 == 10)
@@ -303,6 +303,16 @@ static void access_m_reg(void)
 	read_csr(mstatus);
 }
 
+static void trigger_access_fault(void)
+{
+	trigger_load_access_fault();
+}
+
+static void test_fault(void)
+{
+	trigger_access_fault();
+}
+
 void kernel_main(void)
 {
 	clean_bss();
@@ -326,9 +336,7 @@ void kernel_main(void)
 	print_mem();
 	data();
 
-	//access_m_reg();
-	create_illegal_intr();
-	trigger_load_access_fault();
+	test_fault();
 
 	while (1) {
 		char c = sbi_getchar();

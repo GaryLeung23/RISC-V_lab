@@ -46,6 +46,7 @@ void show_regs(struct pt_regs *regs)
 static void do_trap_error(struct pt_regs *regs, const char *str)
 {
 	printk("Oops - %s\n", str);
+	dump_stack(regs);
 	show_regs(regs);
 	printk("sstatus:0x%016lx  sbadaddr:0x%016lx  scause:0x%016lx\n",
 			regs->sstatus, regs->sbadaddr, regs->scause);

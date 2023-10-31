@@ -73,3 +73,19 @@ add_sub_test:
 	sub a0, t0, t1
 	subw a1, t0, t1
 	ret
+.global compare_test
+compare_test:
+
+	// 0xfffffffffffffc00 = -1024
+	li t0,0xfffffffffffffc00
+	li t1,0xf000
+	slt a0,t1,t0
+	sltu a1,t1,t0
+
+	//0xFFFFFFFFFFFFF768 =-2000
+	slti a0,t0,-2000
+	slti a0,t0,2000
+	// 0xFFFFFFFFFFFFFF38 = -200
+	sltiu a1,t0,-200
+	sltiu a1,t0,200
+	ret

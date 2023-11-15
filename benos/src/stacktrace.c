@@ -36,10 +36,10 @@ static void walk_stackframe(void )
 
 		/* 检查fp是否有效 */
 		/* 
-		 * 只是一个简单判断，主要是因为fp是必定要大于等于sp的。
+		 * 只是一个简单判断，主要是因为fp是必定要大于等于sp + 16的。
 		 * 所以最简单就是先假设没有其他局部变量，这时sp+16 = fp。
 		 * 如果有其他局部变量也没关系，这时sp+16+x=fp。
-		 * 最终可以综合为fp >= sp
+		 * 最终可以综合为fp >= sp + 16 = low
 		 */
 		low = sp + sizeof(struct stackframe);
 		if ((fp < low || fp & 0xf))

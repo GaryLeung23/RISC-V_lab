@@ -62,35 +62,32 @@ _save_user_sp:
 	   保存SP -> PT_SP(sp)
 	   异常返回后使用的sp
 	 */
-	ld s1, TASK_TI_USER_SP(tp)
-	sd s1, PT_SP(sp)
-
+	ld s6, TASK_TI_USER_SP(tp)
+	/*保存sstatus*/
 	csrr s1, sstatus
-	sd s1, PT_SSTATUS(sp)
-
 	/*保存sepc*/
 	csrr s2, sepc
-	sd s2, PT_SEPC(sp)
-	
 	/*保存sbadaddr*/
 	csrr s3, sbadaddr
-	sd s3, PT_SBADADDR(sp)
-
 	/*保存scause*/
 	csrr s4, scause
-	sd s4, PT_SCAUSE(sp)
-
 	/*保存ssratch  保存在ptregs->tp*/
 	csrr s5, sscratch
+
+	sd s6, PT_SP(sp)
+	sd s1, PT_SSTATUS(sp)
+	sd s2, PT_SEPC(sp)
+	sd s3, PT_SBADADDR(sp)
+	sd s4, PT_SCAUSE(sp)
 	sd s5, PT_TP(sp)
 
 .endm
 
 .macro kernel_exit
 	ld a0, PT_SSTATUS(sp)
-	csrw sstatus, a0
-
 	ld a2, PT_SEPC(sp)
+
+	csrw sstatus, a0
 	csrw sepc, a2
 
 	ld x1,  PT_RA(sp)

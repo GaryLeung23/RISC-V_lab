@@ -26,7 +26,7 @@ void show_regs(struct pt_regs *regs)
 		regs->sepc, regs->ra, regs->sp);
 	printk(" gp : %016lx tp : %016lx t0 : %016lx\n",
 		regs->gp, regs->tp, regs->t0);
-	printk(" t1 : %016lx t2 : %016lx t3 : %016lx\n",
+	printk(" t1 : %016lx t2 : %016lx s0 : %016lx\n",
 		regs->t1, regs->t2, regs->s0);
 	printk(" s1 : %016lx a0 : %016lx a1 : %016lx\n",
 		regs->s1, regs->a0, regs->a1);

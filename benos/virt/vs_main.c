@@ -68,8 +68,11 @@ void vs_main()
 	/* 这里从gva_addr读取的内容如果是设置到 一开始物理地址上的内容0x12345678,就说明两阶段地址映射成功*/
 	printk("*gva_ddr 0x%lx\n", *(unsigned long *)gva_addr);
 
-	vs_timer_init();
-	arch_local_irq_enable();
+	printk("...exit VM...\n");
+	SBI_CALL_0(SBI_EXIT_VM_TEST);
+	printk("...back to VM...\n");
+
+	printk("*gva_ddr 0x%lx\n", *(unsigned long *)gva_addr);
 
 	while (1)
 		;

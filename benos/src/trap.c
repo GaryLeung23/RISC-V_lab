@@ -11,6 +11,8 @@
 #include "asm/sbi.h"
 #include "mm.h"
 #include "asm/sbi.h"
+#include "../virt/vs_mm.h"
+#include "asm/vmm.h"
 
 extern void do_exception_vector(void);
 
@@ -119,6 +121,12 @@ static int vs_sbi_ecall_handle(unsigned int id, struct pt_regs *regs)
 	case SBI_EXIT_VM_TEST:
 		printk("%s: running in HS mode\n", __func__);
 		printk("hstatus 0x%lx\n", read_csr(CSR_HSTATUS));
+
+		unsigned long val = hlvwu(VS_MEM);
+		printk("read VS virtual address 0x%lx val 0x%lx\n", VS_MEM, val);
+
+		printk("write VS address 0x%lx\n", VS_MEM);
+		hsvw(VS_MEM, 0x87654321);
 		break;
 	case SBI_SET_TIMER:
 		riscv_vcpu_timer_event_start(regs->a0);
